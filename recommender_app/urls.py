@@ -7,5 +7,5 @@ urlpatterns = [
     path('lti/login/', views.lti_login, name='lti_login'),
     path('lti/launch/', views.lti_launch, name='lti_launch'),
     path('lti/jwks/', views.jwks, name='lti_jwks'),
-    # Puedes añadir otras rutas específicas de tu aplicación aquí si las necesitas
+    path('api/interactions/', views.record_interaction, name='record_interaction'),
 ]

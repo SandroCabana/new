@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recomendaciones LTI</title>
+    <title>Tus Recomendaciones Personalizadas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,12 +13,20 @@
             font-family: 'Inter', sans-serif;
             background-color: #F8F9FA; /* Un gris muy claro */
             color: #212529; /* Gris oscuro casi negro */
+            line-height: 1.6;
         }
         .container-box {
             background-color: #FFFFFF;
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            padding: 2rem;
+            border-radius: 1rem; /* Más redondeado */
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); /* Sombra más pronunciada */
+            padding: 2.5rem; /* Más padding */
+        }
+        .header-bg {
+            background: linear-gradient(to right, #0D2A4C, #1A4D8C); /* Degradado azul oscuro */
+            color: #FFFFFF;
+            padding: 2.5rem 0;
+            border-radius: 1rem 1rem 0 0; /* Bordes redondeados solo arriba */
+            margin-bottom: -2rem; /* Superponer ligeramente la caja principal */
         }
         .text-primary-dark {
             color: #0D2A4C; /* Azul oscuro */
@@ -26,56 +34,138 @@
         .text-accent-gold {
             color: #D4A017; /* Dorado */
         }
+        .recommendation-card {
+            background-color: #FDFDFD;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            padding: 1.5rem;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .recommendation-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
         .list-item-link {
             color: #4F46E5; /* Azul índigo */
-            transition: color 0.2s;
+            font-weight: 600; /* Semibold */
+            transition: color 0.2s, text-decoration 0.2s;
         }
         .list-item-link:hover {
             color: #6366F1; /* Azul índigo más claro */
             text-decoration: underline;
         }
+        .info-label {
+            font-weight: 600;
+            color: #4A5568; /* Gris oscuro para las etiquetas */
+        }
+        .info-value {
+            color: #2D3748; /* Gris más oscuro para los valores */
+        }
         pre {
-            white-space: pre-wrap; /* Permite que el texto se ajuste */
-            word-wrap: break-word; /* Rompe palabras largas */
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px; /* Limita la altura del JSON para que no ocupe toda la pantalla */
+            overflow-y: auto; /* Agrega scroll si el contenido es muy largo */
+        }
+        /* Estilos para el botón de colapsar/expandir */
+        .collapsible-header {
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #E2E8F0;
+            margin-bottom: 1rem;
+        }
+        .collapsible-header:hover {
+            color: #4F46E5;
+        }
+        .collapsible-content {
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .collapsible-content.expanded {
+            display: block;
+            max-height: 500px; /* Altura máxima cuando expandido, ajusta según necesidad */
+        }
+        .arrow-icon {
+            transition: transform 0.3s ease-out;
+        }
+        .arrow-icon.rotated {
+            transform: rotate(90deg);
         }
     </style>
 </head>
-<body class="p-8">
-    <div class="max-w-4xl mx-auto container-box">
-        <h1 class="text-3xl md:text-4xl font-bold mb-6 text-center text-primary-dark">Tus Recomendaciones Personalizadas</h1>
-
-        <div class="mb-6 border-b pb-4 border-gray-200">
-            <p class="text-lg text-gray-700 mb-2">
-                Hola, <span class="font-semibold text-accent-gold">usuario con ID: {{ user_id }}</span>
-            </p>
-            <p class="text-lg text-gray-700 mb-2">
-                Estás en el contexto (curso) con ID: <span class="font-semibold text-accent-gold">{{ context_id }}</span>
-            </p>
-            <p class="text-lg text-gray-700">
-                Tus roles en este contexto son: <span class="font-semibold text-accent-gold">{{ roles|join:", " }}</span>
-            </p>
+<body class="p-4 md:p-8">
+    <div class="max-w-5xl mx-auto">
+        <div class="header-bg text-center">
+            <h1 class="text-3xl md:text-5xl font-extrabold mb-2">¡Bienvenido a tu Recomendador!</h1>
+            <p class="text-lg md:text-xl font-light">Explora contenido personalizado para ti.</p>
         </div>
 
-        <h2 class="text-2xl font-semibold mb-4 text-primary-dark">Temas o Recursos Sugeridos para Ti:</h2>
-        {% if recommendations %}
-            <ul class="list-disc list-inside space-y-3 mb-8">
-                {% for rec in recommendations %}
-                    <li class="text-lg text-gray-700">
-                        <a href="{{ rec.url }}" target="_blank" class="list-item-link">
-                            {{ rec.title }}
-                        </a>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p class="text-gray-600 mb-8">No hay recomendaciones disponibles en este momento. ¡Explora más para que podamos aprender de ti!</p>
-        {% endif %}
+        <div class="container-box mt-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- Tarjeta de Información del Usuario -->
+                <div class="bg-blue-50 p-6 rounded-lg shadow-sm border border-blue-200">
+                    <h2 class="text-xl font-semibold text-blue-800 mb-3">Tu Perfil LTI</h2>
+                    <p class="text-gray-700 mb-1"><span class="info-label">Nombre:</span> <span class="info-value">{{ user_name }}</span></p>
+                    <p class="text-gray-700 mb-1"><span class="info-label">Email:</span> <span class="info-value">{{ user_email }}</span></p>
+                    <p class="text-gray-700 mb-1"><span class="info-label">ID de Usuario:</span> <span class="info-value">{{ user_id }}</span></p>
+                    <p class="text-gray-700"><span class="info-label">Roles:</span> <span class="info-value">{{ roles|join:", " }}</span></p>
+                </div>
 
-        <div class="mt-8 pt-6 border-t border-gray-200">
-            <h3 class="text-xl font-semibold mb-3 text-primary-dark">Datos LTI Brutos (para depuración):</h3>
-            <pre class="bg-gray-50 p-4 rounded-md text-sm text-gray-700 overflow-auto border border-gray-200">{{ raw_lti_data }}</pre>
-            <p class="text-sm text-gray-500 mt-2">Esta información es enviada por Moodle y procesada por tu sistema.</p>
+                <!-- Tarjeta de Información del Contexto (Curso/Plataforma) -->
+                <div class="bg-green-50 p-6 rounded-lg shadow-sm border border-green-200">
+                    <h2 class="text-xl font-semibold text-green-800 mb-3">Contexto del Lanzamiento</h2>
+                    <p class="text-gray-700 mb-1"><span class="info-label">Curso:</span> <span class="info-value">{{ course_title }}</span> (ID: <span class="info-value">{{ context_id }}</span>)</p>
+                    <p class="text-gray-700 mb-1"><span class="info-label">Actividad:</span> <span class="info-value">{{ activity_title }}</span></p>
+                    <p class="text-gray-700"><span class="info-label">Plataforma:</span> <span class="info-value">{{ platform_name }}</span></p>
+                </div>
+            </div>
+
+            <h2 class="text-2xl font-bold mb-5 text-primary-dark border-b pb-3 border-gray-200">Temas o Recursos Sugeridos para Ti:</h2>
+            {% if recommendations %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for rec in recommendations %}
+                        <div class="recommendation-card">
+                            <h3 class="text-lg font-semibold mb-2 text-primary-dark">{{ rec.title }}</h3>
+                            <p class="text-gray-600 text-sm mb-3">Explora este recurso para aprender más.</p>
+                            <a href="{{ rec.url }}" target="_blank" class="list-item-link inline-flex items-center">
+                                Ir al Recurso
+                                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-600 mb-8 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    No hay recomendaciones disponibles en este momento. ¡Explora más para que podamos aprender de ti!
+                </p>
+            {% endif %}
+
+            <!-- Sección de Datos LTI Brutos (Colapsable) -->
+            <div class="mt-10 pt-6 border-t border-gray-200">
+                <div class="collapsible-header" onclick="toggleRawData()">
+                    <h3 class="text-xl font-semibold text-primary-dark">Datos LTI Brutos (para depuración)</h3>
+                    <svg class="arrow-icon w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </div>
+                <div id="rawDataContent" class="collapsible-content">
+                    <pre class="bg-gray-50 p-4 rounded-md text-sm text-gray-700 border border-gray-200">{{ raw_lti_data }}</pre>
+                    <p class="text-sm text-gray-500 mt-2">Esta información es enviada por Moodle y procesada por tu sistema.</p>
+                </div>
+            </div>
         </div>
     </div>
+
+    <script>
+        function toggleRawData() {
+            const content = document.getElementById('rawDataContent');
+            const icon = document.querySelector('.collapsible-header .arrow-icon');
+            content.classList.toggle('expanded');
+            icon.classList.toggle('rotated');
+        }
+    </script>
 </body>
 </html>
