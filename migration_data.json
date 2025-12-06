@@ -1,0 +1,1466 @@
+[
+{
+  "model": "resources.educationalresource",
+  "pk": 1,
+  "fields": {
+    "resource_id": "1",
+    "title": "Curso Completo de SQL para Principiantes",
+    "description": "Un tutorial paso a paso que cubre los fundamentos de SQL, desde la creación de tablas hasta consultas avanzadas. Ideal para quienes no tienen experiencia previa.",
+    "url": "https://www.youtube.com/watch?v=DFg1V-rO6Pg&pp=0gcJCfwAo7VqN5tD",
+    "author": "Soy Dalto",
+    "resource_type": "video",
+    "tags": "sql, bases de datos, introduccion, principiante, consultas",
+    "difficulty_level": "beginner",
+    "lti_context_id": "1",
+    "created_at": "2025-07-24T14:52:24.576Z",
+    "updated_at": "2025-07-24T14:52:24.576Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 2,
+  "fields": {
+    "resource_id": "2",
+    "title": "Comparativa: Bases de Datos Relacionales vs. NoSQL",
+    "description": "Un artículo profundo que explora las diferencias, ventajas y desventajas de las bases de datos relacionales y NoSQL, con ejemplos de uso.",
+    "url": "https://www.youtube.com/watch?v=8K1PKSqHFRQ",
+    "author": "EDteam",
+    "resource_type": "video",
+    "tags": "nosql, sql, bases de datos, comparativa, arquitectura",
+    "difficulty_level": "intermediate",
+    "lti_context_id": "2",
+    "created_at": "2025-07-24T14:53:36.386Z",
+    "updated_at": "2025-07-24T16:40:05.116Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 3,
+  "fields": {
+    "resource_id": "3",
+    "title": "Guía Práctica de Normalización de Bases de Datos (1FN, 2FN, 3FN)",
+    "description": "Un PDF conciso con ejemplos claros sobre las formas normales en el diseño de bases de datos, crucial para evitar redundancia y anomalías.",
+    "url": "https://www.uv.mx/personal/ermeneses/files/2020/09/Clase7-Normalizacion_parteIFinal.pdf",
+    "author": null,
+    "resource_type": "pdf",
+    "tags": "normalizacion, diseño de bases de datos, modelado, sql",
+    "difficulty_level": "advanced",
+    "lti_context_id": "1",
+    "created_at": "2025-07-24T15:25:38.688Z",
+    "updated_at": "2025-07-24T15:25:38.688Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 4,
+  "fields": {
+    "resource_id": "4",
+    "title": "Herramienta Interactiva de Diseño ERD",
+    "description": "Una herramienta web que permite a los estudiantes crear y visualizar diagramas Entidad-Relación de forma sencilla, ideal para practicar el modelado de datos.",
+    "url": "https://www.lucidchart.com/pages/es/ejemplos/herramienta-ERD",
+    "author": "lucidchart",
+    "resource_type": "other",
+    "tags": "erd, modelado de datos, diseño, herramienta, bases de datos",
+    "difficulty_level": "intermediate",
+    "lti_context_id": "2",
+    "created_at": "2025-07-24T16:31:19.646Z",
+    "updated_at": "2025-07-24T16:31:19.646Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 5,
+  "fields": {
+    "resource_id": "a9c58753c2b41c6a4000d2a2df89c519",
+    "title": "SCARP2 Model",
+    "description": "This exercise is a second or familiarization exercise in spreadsheeting, but is also a mathematical model for slope evolution. It uses the concept of \"erosivity\" (generally, the relative ratio of driving and resisting forces) and slope angle to reshape an initial topography. Finally, it asks the students themselves to come up with a real-world situation worth modeling.",
+    "url": "https://oercommons.org/courses/scarp2-model",
+    "author": "OER Commons",
+    "resource_type": "tool",
+    "tags": "Biology, Activity/Lab, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:54.730Z",
+    "updated_at": "2025-11-24T15:44:54.730Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 6,
+  "fields": {
+    "resource_id": "83e4ee97aba472201d2b2ff841d6fdde",
+    "title": "Estimating Exchange Rates of Water in Embayments using Simple Budget Equations.",
+    "description": "Simple budgets may be used to estimate the exchange of water in embayments that capitalize on the concept of steady state and conservation principals.  This is especially true for bays that experience a significant exchange of freshwater.  This exchange of freshwater may reduce the average salt concentration in the bay compared to seawater if it involves addition of freshwater from rivers, R, and/or precipitation, P.  Alternatively, it may increase the average salt concentration in the bay compared to seawater if there is relatively little river input and high evaporation, E.  Since freshwater input changes the salt concentration in the bay, and salt is a conservative material, it is possible to combine two steady state budgets for a bay, one for salt and one for water, to solve for the magnitude of the water flows that enter and exit the bay mouth.",
+    "url": "https://oercommons.org/courses/estimating-exchange-rates-of-water-in-embayments-using-simple-budget-equations",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:54.860Z",
+    "updated_at": "2025-11-24T15:44:54.860Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 7,
+  "fields": {
+    "resource_id": "6c843392f251e41bf08191ea95f19639",
+    "title": "An Assessment of Hill Slope Stability Using the Factor of Safety",
+    "description": "In this homework assignment students are asked to consider the balance of forces on a hill slope using the Factor of Safety.",
+    "url": "https://oercommons.org/courses/an-assessment-of-hill-slope-stability-using-the-factor-of-safety",
+    "author": "Laura Moore",
+    "resource_type": "tool",
+    "tags": "Biology, Activity/Lab, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:55.000Z",
+    "updated_at": "2025-11-24T15:44:55.000Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 8,
+  "fields": {
+    "resource_id": "3e0bf49c09264f07cae7305626f6a425",
+    "title": "Crystallization- Differentiation of Basaltic Magma",
+    "description": "In this exercise, students use major-element compositions of whole-rocks, volcanic glasses, and minerals in lavas and drill cores from the solidified Kilauea Iki lava lake. The data is presented in the form of a \"precompiled\" spreadsheet which contains selected analyses culled from the GEOROC database and a USGS Open File report. Students make graphs from the data to learn about the petrologic processes related to the eruption and in situ crystallization of basaltic magma",
+    "url": "https://oercommons.org/courses/crystallization-differentiation-of-basaltic-magma",
+    "author": "Kent Ratajeski",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:55.109Z",
+    "updated_at": "2025-11-24T15:44:55.109Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 9,
+  "fields": {
+    "resource_id": "d90c84dfd5227db06a0ac6b15b177a77",
+    "title": "M2.1.2 Función Phi de Euler(Ejercicio)",
+    "description": "Dins el mòdul 2 \"Cifrando mensajes\" del MOOC \"Descodificando álgebra\" de l'Escola Superior Politècnica, UPF",
+    "url": "https://oercommons.org/courses/m2-1-2-funcion-phi-de-euler-ejercicio",
+    "author": "Nikolaos Makriyannis",
+    "resource_type": "other",
+    "tags": "Mathematics, Homework/Assignment, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:55.262Z",
+    "updated_at": "2025-11-24T15:44:55.262Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 10,
+  "fields": {
+    "resource_id": "74b3fd8b27a6555997eb26c7e937f36f",
+    "title": "M3. Introducción: compartiendo secretos",
+    "description": "Dins el mòdul 3 \"Compartiendo secretos\" del MOOC \"Descodificando álgebra\" de l'Escola Superior Politècnica, UPF",
+    "url": "https://oercommons.org/courses/m3-introduccion-compartiendo-secretos",
+    "author": "Nikolaos Makriyannis",
+    "resource_type": "other",
+    "tags": "Mathematics, Homework/Assignment, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:55.383Z",
+    "updated_at": "2025-11-24T15:44:55.383Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 11,
+  "fields": {
+    "resource_id": "6e2a1d869f770d7b0b3d48e315c3d8e0",
+    "title": "M4.3.2. Imagen y núcleo (ejercicio)",
+    "description": "Dins el mòdul 4 \"Corrigiendo errores\" del MOOC \"Descodificando álgebra\" de l'Escola Superior Politècnica, UPF",
+    "url": "https://oercommons.org/courses/m4-3-2-imagen-y-nucleo-ejercicio",
+    "author": "Nikolaos Makriyannis",
+    "resource_type": "other",
+    "tags": "Mathematics, Homework/Assignment, CC BY-NC-ND",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:55.509Z",
+    "updated_at": "2025-11-24T15:44:55.509Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 12,
+  "fields": {
+    "resource_id": "9731429b946dce0e4664ea6d97e4f876",
+    "title": "M5. Introducción: Mirando al futuro",
+    "description": "Dins el mòdul 5 \"Mirando al futuro\" del MOOC \"Descodificando álgebra\" de l'Escola Superior Politècnica, UPF",
+    "url": "https://oercommons.org/courses/m5-introduccion-mirando-al-futuro",
+    "author": "Nikolaos Makriyannis",
+    "resource_type": "other",
+    "tags": "Mathematics, Homework/Assignment, CC BY-NC-ND",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:55.713Z",
+    "updated_at": "2025-11-24T15:44:55.713Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 13,
+  "fields": {
+    "resource_id": "bd035027e8876327556cb48711aa2007",
+    "title": "Water Quality",
+    "description": "Students use a microcomputer connected to a conductivity probe to measure the total dissolved solids in local area water samples.",
+    "url": "https://oercommons.org/courses/water-quality-6",
+    "author": "This activity is taken from Earth Science With Vernier  by Robyn Johnson, Gretchen Stahmer DeMoss, and Richard Sorensen, Published by , Vernier Software (more info) . This Starting Point page was created by Robert MacKay, of Clark College .",
+    "resource_type": "tool",
+    "tags": "Chemistry, Activity/Lab, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:55.923Z",
+    "updated_at": "2025-11-24T15:44:55.923Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 14,
+  "fields": {
+    "resource_id": "ec849eef84e74b63d8dc74845677e3f9",
+    "title": "Earth's Radiation Budget",
+    "description": "In this activity students explore the Earth's radiation budget using Earth radiation Budget Experiment (ERBE) data archived at the IRI/LDEO Climate Data Library (more info) .",
+    "url": "https://oercommons.org/courses/earth-s-radiation-budget",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:56.102Z",
+    "updated_at": "2025-11-24T15:44:56.102Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 15,
+  "fields": {
+    "resource_id": "3b2ecce15633ccf2df54693e89ce98aa",
+    "title": "Global Warming: A Zonal Energy Balance Model",
+    "description": "This is a teaching module, directed to undergraduate students in applied mathematics, that presents a Zonal Energy Balance Model to describe the evolution of the latitudinal distribution of Earth's surface temperature subject to incremental levels of cumulative carbon emissions in the atmosphere. A strategy to avert \"dangerous levels\" of global warming is imbedded in the model. Students working with the module will write a computer code, using a software such as MATLAB or Mathematica, to obtain numerical solutions of the model and simulate strategies that guarantee controlled levels of global warming.",
+    "url": "https://oercommons.org/courses/global-warming-a-zonal-energy-balance-model",
+    "author": "Victor Padron",
+    "resource_type": "other",
+    "tags": "Geology, Homework/Assignment, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:56.219Z",
+    "updated_at": "2025-11-24T15:44:56.219Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 16,
+  "fields": {
+    "resource_id": "5b0766518c259585258656eeb011afc5",
+    "title": "Hypoxia in Coastal Marine Ecosystems",
+    "description": "Aquatic ecosystems are home to a complex intersection of physical and biological factors and an intersection of natural and anthropogenic factors. In the Chesapeake Bay, low oxygen events have occurred periodically and may be connected with harmful algal blooms, fish kills, heavy flooding/runoff events, and warming temperatures. Careful monitoring of the system by the Chesapeake Bay Program since 1984 allows scientists and policymakers to evaluate the causes of the events and monitor improvements in the health of the ecosystem.",
+    "url": "https://oercommons.org/courses/hypoxia-in-coastal-marine-ecosystems",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:56.465Z",
+    "updated_at": "2025-11-24T15:44:56.465Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 17,
+  "fields": {
+    "resource_id": "e03d23d57b1be3228d6e61775f3eff9f",
+    "title": "Build a Delta!",
+    "description": "Lab 1: the students begin by describing on a worksheet their own ideas",
+    "url": "https://oercommons.org/courses/build-a-delta",
+    "author": "OER Commons",
+    "resource_type": "tool",
+    "tags": "Biology, Activity/Lab, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:56.584Z",
+    "updated_at": "2025-11-24T15:44:56.584Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 18,
+  "fields": {
+    "resource_id": "d2577fae02e38109d75291945aca1de4",
+    "title": "Introducing Geologic Map Interpretation and Cross Section Construction Using Google Earth",
+    "description": "The approach to teaching geologic map interpretation described in the materials departs significantly from the typical approach, which commonly involves defining strike and dip and types of contacts, drawing cross sections in areas with no topography and working with paper block models and PlayDoh for visualiztion, teaching outcrop patterns and rule of Vs in areas with topography, and then having students practice map interpretation and cross section construction.",
+    "url": "https://oercommons.org/courses/introducing-geologic-map-interpretation-and-cross-section-construction-using-google-earth",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:56.829Z",
+    "updated_at": "2025-11-24T15:44:56.829Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 19,
+  "fields": {
+    "resource_id": "619288a7a5186b92387b301e1c79f8a0",
+    "title": "MER (Mars Exploration Rover ) Landing Site Selection",
+    "description": "In this lab students will explore first hand what sorts of processes occur when scientists and engineers try to identify a landing site for a mission to Mars. This will mimic the process used to select the MER rover landing sites, and what will be used for future missions. First, students briefly become a planetary geologist, engineer or astrobiologist.  Second, from the point of view the students feel is appropriate for their new position, and using the same constraints employed by the scientific teams preparing for forthcoming Mars missions, students will identify their top list of candidate landing sites and submit a short report describing them to me by the following class period. Third, in the following class period, all three groups of experts will work together to narrow down the site selection to a top candidate.  Where would you send the next lander if the choice was up to you?",
+    "url": "https://oercommons.org/courses/mer-mars-exploration-rover-landing-site-selection",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:56.973Z",
+    "updated_at": "2025-11-24T15:44:56.973Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 20,
+  "fields": {
+    "resource_id": "ae9885c73ebfb08587a22048ea0162cb",
+    "title": "How are Flow Conditions in Volcanic Conduits Estimated?",
+    "description": "SSAC Physical Volcanology module.  Students build a spreadsheet to calculate velocity of rising magma in steady-state Plinian eruptions using conservation of mass and momentum.",
+    "url": "https://oercommons.org/courses/how-are-flow-conditions-in-volcanic-conduits-estimated-2",
+    "author": "chuck connor",
+    "resource_type": "tool",
+    "tags": "Biology, Activity/Lab, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:57.114Z",
+    "updated_at": "2025-11-24T15:44:57.115Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 21,
+  "fields": {
+    "resource_id": "e9e5e1ddc8635e22696789c16e1b098a",
+    "title": "What is the Volume of the 1992 Eruption of Cerro Negro Volcano, Nicaragua?",
+    "description": "SSAC Physical Volcanology module.  Students build a spreadsheet to calculate the volume a tephra deposit using an exponential-thinning model.",
+    "url": "https://oercommons.org/courses/what-is-the-volume-of-the-1992-eruption-of-cerro-negro-volcano-nicaragua-2",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:57.459Z",
+    "updated_at": "2025-11-24T15:44:57.459Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 22,
+  "fields": {
+    "resource_id": "5f351cc52fdb1c0a8c002d39e6e91eb5",
+    "title": "In-class review: folds",
+    "description": "Short in-class review question about using given strike and dip information to classify a fold.  Stereonets used.",
+    "url": "https://oercommons.org/courses/in-class-review-folds",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:57.739Z",
+    "updated_at": "2025-11-24T15:44:57.739Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 23,
+  "fields": {
+    "resource_id": "5e9c472d74f967448795c19527b1c6a2",
+    "title": "Your Environmental Impact",
+    "description": "The following homework assignments are designed to build understanding of personal water use, sewage, waste generation and disposal, pollution sources and impacts, and energy use and costs.",
+    "url": "https://oercommons.org/courses/your-environmental-impact",
+    "author": "Eric Baer and Mayra Hernandez, Highline Community College",
+    "resource_type": "tool",
+    "tags": "Biology, Activity/Lab, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:57.861Z",
+    "updated_at": "2025-11-24T15:44:57.861Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 24,
+  "fields": {
+    "resource_id": "1983d3e8aee0baf2bfa4f4a2ef28c6f0",
+    "title": "Web-based Exercise #4:  GIS Applications.",
+    "description": "This course will introduce fundamental concepts of geographic information science (GIScience), including geographic information systems (GIS), global positioning systems (GPS), cartography, remote sensing, and spatial statistics. Advanced geospatial application tools, such as Google Earth, Google Map, iPhone Applications, and the National Geographic Map Machine will be used to demonstrate these concepts. Students will learn how to use these geospatial technologies and tools in addressing human and environmental problems. Students will learn how to organize geospatial data, visualize spatial patterns, and conduct basic spatial query and map overlay functions.",
+    "url": "https://oercommons.org/courses/web-based-exercise-4-gis-applications",
+    "author": "Justin Shepard",
+    "resource_type": "other",
+    "tags": "Education, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:57.990Z",
+    "updated_at": "2025-11-24T15:44:57.990Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 25,
+  "fields": {
+    "resource_id": "fce3c48dae7e31c8463837b1017078ae",
+    "title": "MO LEAP Block Grade MS - Ocean Waves",
+    "description": "Ocean Waves - Physical Science - Grades 6-8",
+    "url": "https://oercommons.org/courses/mo-leap-block-grade-ms-ocean-waves",
+    "author": "OER Commons",
+    "resource_type": "article",
+    "tags": "Physical Science, Lesson Plan, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:58.132Z",
+    "updated_at": "2025-11-24T15:44:58.132Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 26,
+  "fields": {
+    "resource_id": "819464b7e45f65aa09591568e1c95ff2",
+    "title": "OER-UCLouvain: Une bulle accélérée",
+    "description": "La ressource consiste en une fiche pédagogique portant sur une expérience de sous-discipline. Celle-ci propose des informations pratiques pour l'enseignant ainsi qu'une explication pédagogique de l'expérience. La ressource contient également une vidéo de l'expérience.",
+    "url": "https://oercommons.org/courses/oer-uclouvain-une-bulle-acc%C3%A9l%C3%A9r%C3%A9e",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Physical Science, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:58.403Z",
+    "updated_at": "2025-11-24T15:44:58.404Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 27,
+  "fields": {
+    "resource_id": "9d59fb1e1e4ab0b528804ebe666c3539",
+    "title": "OER-UCLouvain: Vidéo et fiche pédagogique : expérience d'électrocinétique - Pour comprendre les conditions d'un court circuit",
+    "description": "La ressource consiste en une fiche pédagogique portant sur une expérience d'électrocinétique. Celle-ci propose des informations pratiques pour l'enseignant ainsi qu'une explication pédagogique de l'expérience. La ressource contient également une vidéo de l'expérience.",
+    "url": "https://oercommons.org/courses/oer-uclouvain-vid%C3%A9o-et-fiche-p%C3%A9dagogique-exp%C3%A9rience-d-%C3%A9lectrocin%C3%A9tique-pour-comprendre-les-conditions-d-un-court-circuit",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Physical Science, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:58.530Z",
+    "updated_at": "2025-11-24T15:44:58.530Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 28,
+  "fields": {
+    "resource_id": "01769c13cfaa80ec1633d28b587cb928",
+    "title": "OER-UCLouvain: Vidéo et fiche pédagogique : expérience en mécanique des fluides - Poussée d'Archimède",
+    "description": "La ressource consiste en une fiche pédagogique portant sur une expérience en lien avec la poussée d'Archimède. Celle-ci propose une explication pédagogique de l'expérience et une capsule vidéo de l'expérience.",
+    "url": "https://oercommons.org/courses/oer-uclouvain-vid%C3%A9o-et-fiche-p%C3%A9dagogique-exp%C3%A9rience-en-m%C3%A9canique-des-fluides-pouss%C3%A9e-d-archim%C3%A8de",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Physical Science, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:58.784Z",
+    "updated_at": "2025-11-24T15:44:58.784Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 29,
+  "fields": {
+    "resource_id": "863e30254b855f531de56bb84bfc5add",
+    "title": "Noeuds, ventres et régimes stationnaires",
+    "description": "La ressource en physique contient une fiche pédagogique avec une capsule vidéo d'expérience en lien avec la tension superficielle.",
+    "url": "https://oercommons.org/courses/noeuds-ventres-et-r%C3%A9gimes-stationnaires",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Physical Science, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:58.901Z",
+    "updated_at": "2025-11-24T15:44:58.901Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 30,
+  "fields": {
+    "resource_id": "1f8d014dbfe39f6833928c21bd9a5ed5",
+    "title": "Crystallizing Minerals from Aqueous Solutions",
+    "description": "Students dissolve selected salts and other compounds in water, let the water evaporate for about three weeks, and examine the crystals that grow. Students then draw crystal shapes and discuss the experiment. Discussion can include why and how crystals grow from solutions, why some minerals dissolve well and others do not, concepts of symmetry, and crystal systems and point groups.",
+    "url": "https://oercommons.org/courses/crystallizing-minerals-from-aqueous-solutions",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Chemistry, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:59.028Z",
+    "updated_at": "2025-11-24T15:44:59.028Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 31,
+  "fields": {
+    "resource_id": "dd944e6c6d10026b21cebfc8fde01b46",
+    "title": "Porosity and Permeability",
+    "description": "The students are exposed to a brief (approx. 5 minute) introduction/presentation on aquifers and groundwater including their geographical context, structure, and vocabulary.",
+    "url": "https://oercommons.org/courses/porosity-and-permeability",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:59.157Z",
+    "updated_at": "2025-11-24T15:44:59.157Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 32,
+  "fields": {
+    "resource_id": "9af95d7fc313a7d3adef481069c69127",
+    "title": "IODP 310: Coral Reef off Tahiti",
+    "description": "In this activity, students will make observations about the core that was collected on IODP expedition 310.",
+    "url": "https://oercommons.org/courses/iodp-310-coral-reef-off-tahiti",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:59.283Z",
+    "updated_at": "2025-11-24T15:44:59.283Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 33,
+  "fields": {
+    "resource_id": "1998ed83c409c3e2d16c6616498b8226",
+    "title": "Aquifers in outcrop",
+    "description": "Students describe the hydrogeologic properties of different sedimentary and volcanic rocks.",
+    "url": "https://oercommons.org/courses/aquifers-in-outcrop",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:59.427Z",
+    "updated_at": "2025-11-24T15:44:59.427Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 34,
+  "fields": {
+    "resource_id": "bb4511f8b41736b77bd657a42567297c",
+    "title": "Pump Test",
+    "description": "Students run a pump test and interpret the results as drawdown curves and hydraulic conductivity measurements.",
+    "url": "https://oercommons.org/courses/pump-test",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:59.545Z",
+    "updated_at": "2025-11-24T15:44:59.545Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 35,
+  "fields": {
+    "resource_id": "7ef6549c7a188ee0a85e5be48e86325c",
+    "title": "Petrology and Geochemistry of the Ongoing Pu'u 'Ō'ō Eruption of Kīlauea Volcano, Hawai'i (1983-2009)",
+    "description": "Pre-lab material provides background on the Hawaiian hotspot and the current eruption utilizing maps, diagrams, information, photographs, and video footage of the Pu'u 'Ō'ō-Kupaianaha eruption with written questions that test understanding of this material.",
+    "url": "https://oercommons.org/courses/petrology-and-geochemistry-of-the-ongoing-pu-u-%C5%8D-%C5%8D-eruption-of-k%C4%ABlauea-volcano-hawai-i-1983-2009-2",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:59.660Z",
+    "updated_at": "2025-11-24T15:44:59.660Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 36,
+  "fields": {
+    "resource_id": "1ec2826374b972bcc674f2b11ea246be",
+    "title": "Rates of Change and Deep Time in the Middle Grades Classroom",
+    "description": "The nature and scientific measurement of geological and cosmological time are among the most misunderstood and difficult to teach concepts in all of K-12 science education. To address this issue, a multi-disciplinary team of geologists, astronomers and education professionals at Western Kentucky University developed a series of professional development workshops for pre- and in-service middle grades teachers. The goals of those workshops were to 1) to develop teacher's content understanding of rates of change and the ages of the earth and universe; and 2) to provide teachers with materials, activities and teaching strategies to help them more effectively educate students about rates of change and the concepts of deep time. Two four-day workshops were held, with each workshop divided into two two-day sessions. Each workshop day consisted of a blend of in-depth content discussions, hands-on activities, and classroom implementation forums. The teachers were provided with all the materials",
+    "url": "https://oercommons.org/courses/rates-of-change-and-deep-time-in-the-middle-grades-classroom",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:59.821Z",
+    "updated_at": "2025-11-24T15:44:59.821Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 37,
+  "fields": {
+    "resource_id": "f243898f355f0d535c0b410397ce998c",
+    "title": "Using Dendrochronology to Determine the Age and Past Environments of the Black Forest Region, Colorado, USA",
+    "description": "The use of dendrochronology in determining the geologic history of a location. The development of an understanding how tree growth can indicate the relationships between climate, geomorphology, ecology and archeology.",
+    "url": "https://oercommons.org/courses/using-dendrochronology-to-determine-the-age-and-past-environments-of-the-black-forest-region-colorado-usa",
+    "author": "Paul Grogger",
+    "resource_type": "tool",
+    "tags": "Applied Science, Activity/Lab, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:44:59.952Z",
+    "updated_at": "2025-11-24T15:44:59.952Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 38,
+  "fields": {
+    "resource_id": "3a8187d017cfb524e066fd8db494d82c",
+    "title": "Discovering the Principles of Relative Age Determination â a Think-Pair-Share In-Class Activity",
+    "description": "In this in-class activity, students are challenged to identify rock units and geologic features and determine the relative ages of these features without prior instruction in the classical methods of relative age determination.",
+    "url": "https://oercommons.org/courses/discovering-the-principles-of-relative-age-determination-%C3%A2-a-think-pair-share-in-class-activity",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:00.088Z",
+    "updated_at": "2025-11-24T15:45:00.088Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 39,
+  "fields": {
+    "resource_id": "71becc848ca36d38117b5d6459d510c8",
+    "title": "Activity Option 2.2 - Rare Earth Elements: Critical Elements of the Future",
+    "description": "This activity is based on the global supply and demand relationships of rare earth elements (REE). Students will work in small groups to analyze China's role in global REE production and supply, and how REE production, supply, and demand control REE price.",
+    "url": "https://oercommons.org/courses/activity-option-2-2-rare-earth-elements-critical-elements-of-the-future",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Biology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:00.312Z",
+    "updated_at": "2025-11-24T15:45:00.312Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 40,
+  "fields": {
+    "resource_id": "48b314ce4dbfd60e91d5a5db90463421",
+    "title": "Carbon Through Time: Legacy of Energy vs. Environment",
+    "description": "Students collect and analyze geological and biological materials for carbon content in order to investigate carbon through time.  Implications for energy production now and in the future are explored in the context of carbon cycling in the oceans, the atmosphere, and the geosphere.",
+    "url": "https://oercommons.org/courses/carbon-through-time-legacy-of-energy-vs-environment",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Geology, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:00.501Z",
+    "updated_at": "2025-11-24T15:45:00.501Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 41,
+  "fields": {
+    "resource_id": "8b4adc6cc4fd7206cec7868a8cc88c1c",
+    "title": "Smithsonian Science Starter: Find Yourself in Hot Water",
+    "description": "Explore how pressure changes impact water.",
+    "url": "https://oercommons.org/courses/smithsonian-science-starter-find-yourself-in-hot-water",
+    "author": "National Air and Space Museum",
+    "resource_type": "article",
+    "tags": "Physical Science, Lesson Plan, CC BY-NC",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:00.662Z",
+    "updated_at": "2025-11-24T15:45:00.662Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 42,
+  "fields": {
+    "resource_id": "7be21e6b71e027a333fafdb985d6d44b",
+    "title": "STEM in 30: Living and Working in Space",
+    "description": "Learn about the benefits and challenges of living and working in space.",
+    "url": "https://oercommons.org/courses/stem-in-30-living-and-working-in-space",
+    "author": "National Air and Space Museum",
+    "resource_type": "tool",
+    "tags": "Physical Science, Activity/Lab, CC BY-NC",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:00.780Z",
+    "updated_at": "2025-11-24T15:45:00.780Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 43,
+  "fields": {
+    "resource_id": "c882427a3f5debdb0fca0969d8bd4c97",
+    "title": "My Path: We don't do science just for ourselves Alexa Van Eaton Volcanologist",
+    "description": "In this My Path Alexa Van Eaton talks about her work with volcanoes in the Pacific Northwest and how scientists keep on top of the all the shaking and quaking.",
+    "url": "https://oercommons.org/courses/my-path-we-don-t-do-science-just-for-ourselves-alexa-van-eaton-volcanologist",
+    "author": "National Air and Space Museum",
+    "resource_type": "tool",
+    "tags": "Career and Technical Education, Activity/Lab, CC BY-NC",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:00.900Z",
+    "updated_at": "2025-11-24T15:45:00.900Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 44,
+  "fields": {
+    "resource_id": "d3aed70093f69b09e779691fd8fc80d1",
+    "title": "The Planetary Accounting Framework: Understanding Your Environmental Impact",
+    "description": "This resource is a video abstract of a research paper created by Research Square on behalf of its authors. It provides a synopsis that's easy to understand, and can be used to introduce the topics it covers to students, researchers, and the general public. The video's transcript is also provided in full, with a portion provided below for preview:",
+    "url": "https://oercommons.org/courses/the-planetary-accounting-framework-understanding-your-environmental-impact",
+    "author": "Video Bytes",
+    "resource_type": "other",
+    "tags": "Atmospheric Science, CC BY",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:01.059Z",
+    "updated_at": "2025-11-24T15:45:01.059Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 45,
+  "fields": {
+    "resource_id": "1bb97c35fe7c1b5cca3c3065cc83d9b9",
+    "title": "Introduction to PDBe programmatic access",
+    "description": "This webinar will give an introduction to programmatic access at PDBe, highlighting the type of data that is available and how this can be utilised.",
+    "url": "https://oercommons.org/courses/introduction-to-pdbe-programmatic-access",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Applied Science, CC BY",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:01.179Z",
+    "updated_at": "2025-11-24T15:45:01.180Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 46,
+  "fields": {
+    "resource_id": "266086c9fad35435a58a99f3102aec24",
+    "title": "MO LEAP Block Grade MS - Frankenfoods",
+    "description": "Frankenfoods - Life Science - Grades 6-8",
+    "url": "https://oercommons.org/courses/mo-leap-block-grade-ms-frankenfoods",
+    "author": "OER Commons",
+    "resource_type": "article",
+    "tags": "Life Science, Lesson Plan, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:01.321Z",
+    "updated_at": "2025-11-24T15:45:01.321Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 47,
+  "fields": {
+    "resource_id": "6aee67bdd0d5bff66ca78fdd03521d1f",
+    "title": "OER-UCLouvain: Dossier pédagogique - dissection de l'encéphale (niveau secondaire, dossier du professeur)",
+    "description": "La ressource consiste en un dossier pédagogique portant sur la dissection de l'encéphale réalisé par l’équipe de scienceinfuse de l’UCLouvain.",
+    "url": "https://oercommons.org/courses/oer-uclouvain-dossier-p%C3%A9dagogique-dissection-de-l-enc%C3%A9phale-niveau-secondaire-dossier-du-professeur",
+    "author": "BAUWENS, Anne",
+    "resource_type": "tool",
+    "tags": "Life Science, Activity/Lab, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:01.482Z",
+    "updated_at": "2025-11-24T15:45:01.482Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 48,
+  "fields": {
+    "resource_id": "1982a43abe87d36a5f06842ed55436d5",
+    "title": "OER-UCLouvain: Vidéo et fiche pédagogique : expérience en cytologie - Observation de cellules d'épiderme d'une feuille charnue d'un bulbe d'oignon rouge dans différents milieux",
+    "description": "La ressource consiste en une fiche pédagogique portant sur une expérience de cytologie. Celle-ci propose des informations pratiques pour l’enseignant ainsi qu’une explication pédagogique de l’expérience. La ressource contient également une vidéo de l’expérience.",
+    "url": "https://oercommons.org/courses/oer-uclouvain-vid%C3%A9o-et-fiche-p%C3%A9dagogique-exp%C3%A9rience-en-cytologie-observation-de-cellules-d-%C3%A9piderme-d-une-feuille-charnue-d-un-bulbe-d-oignon-rouge-dans-diff%C3%A9rents-milieux",
+    "author": "DE KESEL, Myriam",
+    "resource_type": "tool",
+    "tags": "Life Science, Activity/Lab, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:01.609Z",
+    "updated_at": "2025-11-24T15:45:01.609Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 49,
+  "fields": {
+    "resource_id": "59ffebe4f7867ea24edba2c9e4af7f18",
+    "title": "OER-UCLouvain: Vidéo et fiche pédagogique : expérience en cytologie - Observation de cellules d'une feuille d'élodée dans différents milieux",
+    "description": "La ressource consiste en une fiche pédagogique portant sur une expérience de cytologie. Celle-ci propose des informations pratiques pour l’enseignant ainsi qu’une explication pédagogique de l’expérience. La ressource contient également une vidéo de l’expérience.",
+    "url": "https://oercommons.org/courses/oer-uclouvain-vid%C3%A9o-et-fiche-p%C3%A9dagogique-exp%C3%A9rience-en-cytologie-observation-de-cellules-d-une-feuille-d-%C3%A9lod%C3%A9e-dans-diff%C3%A9rents-milieux",
+    "author": "DE KESEL, Myriam",
+    "resource_type": "tool",
+    "tags": "Life Science, Activity/Lab, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:01.820Z",
+    "updated_at": "2025-11-24T15:45:01.821Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 50,
+  "fields": {
+    "resource_id": "0d876c94f097e6bdcd5645a693b57418",
+    "title": "Pathology Case Study: A 63-Year-Old Male with Cauda Equina Syndrome",
+    "description": "(This case study was added to OER Commons as one of a batch of over 700. It has relevant information which may include medical imagery, lab results, and history where relevant. A link to the final diagnosis can be found at the end of the case study for review. The first paragraph of the case study -- typically, but not always the clinical presentation -- is provided below.)",
+    "url": "https://oercommons.org/courses/pathology-case-study-a-63-year-old-male-with-cauda-equina-syndrome",
+    "author": "Abdul-Haseeb Naeem",
+    "resource_type": "other",
+    "tags": "Applied Science, Some Rights Reserved",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:01.937Z",
+    "updated_at": "2025-11-24T15:45:01.938Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 51,
+  "fields": {
+    "resource_id": "6fe18ecc729ec31c7aca942636d5ad1e",
+    "title": "Pathology Case Study: A man at 70s Had Episodes of Syncopy",
+    "description": "(This case study was added to OER Commons as one of a batch of over 700. It has relevant information which may include medical imagery, lab results, and history where relevant. A link to the final diagnosis can be found at the end of the case study for review. The first paragraph of the case study -- typically, but not always the clinical presentation -- is provided below.)",
+    "url": "https://oercommons.org/courses/pathology-case-study-a-man-at-70s-had-episodes-of-syncopy",
+    "author": "Jeffrey Nine",
+    "resource_type": "other",
+    "tags": "Applied Science, Some Rights Reserved",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:02.049Z",
+    "updated_at": "2025-11-24T15:45:02.049Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 52,
+  "fields": {
+    "resource_id": "81788e5ee46c15a8fa55629e41d44172",
+    "title": "Pathology Case Study: A 30-year Old Female with a Suprasellar Tumor",
+    "description": "(This case study was added to OER Commons as one of a batch of over 700. It has relevant information which may include medical imagery, lab results, and history where relevant. A link to the final diagnosis can be found at the end of the case study for review. The first paragraph of the case study -- typically, but not always the clinical presentation -- is provided below.)",
+    "url": "https://oercommons.org/courses/pathology-case-study-a-30-year-old-female-with-a-suprasellar-tumor",
+    "author": "Huang Guo-dong",
+    "resource_type": "other",
+    "tags": "Applied Science, Some Rights Reserved",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:02.158Z",
+    "updated_at": "2025-11-24T15:45:02.158Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 53,
+  "fields": {
+    "resource_id": "de50b5069c3b596a26ce25e6ec15b205",
+    "title": "Pathology Case Study: A 67 Year-Old Man with Multiple Sclerosis and New Cerebellar Lesions",
+    "description": "(This case study was added to OER Commons as one of a batch of over 700. It has relevant information which may include medical imagery, lab results, and history where relevant. A link to the final diagnosis can be found at the end of the case study for review. The first paragraph of the case study -- typically, but not always the clinical presentation -- is provided below.)",
+    "url": "https://oercommons.org/courses/pathology-case-study-a-67-year-old-man-with-multiple-sclerosis-and-new-cerebellar-lesions",
+    "author": "Charleen T. Chu",
+    "resource_type": "other",
+    "tags": "Applied Science, Some Rights Reserved",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:02.276Z",
+    "updated_at": "2025-11-24T15:45:02.276Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 54,
+  "fields": {
+    "resource_id": "85cfe8852b1816cec6282210eaef6403",
+    "title": "Pathology Case Study: A 64 year-old woman with  longstanding migraine",
+    "description": "(This case study was added to OER Commons as one of a batch of over 700. It has relevant information which may include medical imagery, lab results, and history where relevant. A link to the final diagnosis can be found at the end of the case study for review. The first paragraph of the case study -- typically, but not always the clinical presentation -- is provided below.)",
+    "url": "https://oercommons.org/courses/pathology-case-study-a-64-year-old-woman-with-longstanding-migraine",
+    "author": "Astudillo A",
+    "resource_type": "other",
+    "tags": "Applied Science, Some Rights Reserved",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:02.429Z",
+    "updated_at": "2025-11-24T15:45:02.430Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 55,
+  "fields": {
+    "resource_id": "0accbac94273fcda7f9b9908b9e9cb34",
+    "title": "Pathology Case Study: A 73 year-old man with a mass at the foramen magnum",
+    "description": "(This case study was added to OER Commons as one of a batch of over 700. It has relevant information which may include medical imagery, lab results, and history where relevant. A link to the final diagnosis can be found at the end of the case study for review. The first paragraph of the case study -- typically, but not always the clinical presentation -- is provided below.)",
+    "url": "https://oercommons.org/courses/pathology-case-study-a-73-year-old-man-with-a-mass-at-the-foramen-magnum",
+    "author": "Andrew F Dean",
+    "resource_type": "other",
+    "tags": "Applied Science, Some Rights Reserved",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:02.545Z",
+    "updated_at": "2025-11-24T15:45:02.545Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 56,
+  "fields": {
+    "resource_id": "26dd9c0e7f419177ce17d332a45ecacb",
+    "title": "Pathology Case Study: A 39-year-old man with  central diabetes insipidus",
+    "description": "(This case study was added to OER Commons as one of a batch of over 700. It has relevant information which may include medical imagery, lab results, and history where relevant. A link to the final diagnosis can be found at the end of the case study for review. The first paragraph of the case study -- typically, but not always the clinical presentation -- is provided below.)",
+    "url": "https://oercommons.org/courses/pathology-case-study-a-39-year-old-man-with-central-diabetes-insipidus",
+    "author": "Bruno Lopes dos Santos",
+    "resource_type": "other",
+    "tags": "Applied Science, Some Rights Reserved",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:02.672Z",
+    "updated_at": "2025-11-24T15:45:02.672Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 57,
+  "fields": {
+    "resource_id": "dc55dddc10bd90a95080e3ffa586ee64",
+    "title": "Pathology Case Study: A 59-year-old woman with a retroauricular tumor",
+    "description": "(This case study was added to OER Commons as one of a batch of over 700. It has relevant information which may include medical imagery, lab results, and history where relevant. A link to the final diagnosis can be found at the end of the case study for review. The first paragraph of the case study -- typically, but not always the clinical presentation -- is provided below.)",
+    "url": "https://oercommons.org/courses/pathology-case-study-a-59-year-old-woman-with-a-retroauricular-tumor",
+    "author": "Alejandra Magagna-Poveda",
+    "resource_type": "other",
+    "tags": "Applied Science, Some Rights Reserved",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:02.784Z",
+    "updated_at": "2025-11-24T15:45:02.784Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 58,
+  "fields": {
+    "resource_id": "818d6103463cd6c52ae0af600689a20d",
+    "title": "Pathology Case Study: A 7-month-old male with a 4.5 cm deep left inner thigh lesion",
+    "description": "(This case study was added to OER Commons as one of a batch of over 700. It has relevant information which may include medical imagery, lab results, and history where relevant. A link to the final diagnosis can be found at the end of the case study for review. The first paragraph of the case study -- typically, but not always the clinical presentation -- is provided below.)",
+    "url": "https://oercommons.org/courses/pathology-case-study-a-7-month-old-male-with-a-4-5-cm-deep-left-inner-thigh-lesion",
+    "author": "Jason Chiang",
+    "resource_type": "other",
+    "tags": "Applied Science, Some Rights Reserved",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:02.903Z",
+    "updated_at": "2025-11-24T15:45:02.903Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 59,
+  "fields": {
+    "resource_id": "047bb660e37807ef8c2d5e3e79c041e5",
+    "title": "Pathology Case Study: An 82 year old female with thrombocytopenia",
+    "description": "(This case study was added to OER Commons as one of a batch of over 700. It has relevant information which may include medical imagery, lab results, and history where relevant. A link to the final diagnosis can be found at the end of the case study for review. The first paragraph of the case study -- typically, but not always the clinical presentation -- is provided below.)",
+    "url": "https://oercommons.org/courses/pathology-case-study-an-82-year-old-female-with-thrombocytopenia",
+    "author": "Brian K. Theisen",
+    "resource_type": "other",
+    "tags": "Applied Science, Some Rights Reserved",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:03.071Z",
+    "updated_at": "2025-11-24T15:45:03.071Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 60,
+  "fields": {
+    "resource_id": "6afa46104f146e7e58410db8f7183ece",
+    "title": "Pathology Case Study: A 21-year-old female with a bladder mass",
+    "description": "(This case study was added to OER Commons as one of a batch of over 700. It has relevant information which may include medical imagery, lab results, and history where relevant. A link to the final diagnosis can be found at the end of the case study for review. The first paragraph of the case study -- typically, but not always the clinical presentation -- is provided below.)",
+    "url": "https://oercommons.org/courses/pathology-case-study-a-21-year-old-female-with-a-bladder-mass",
+    "author": "Anil Parwani",
+    "resource_type": "other",
+    "tags": "Applied Science, Some Rights Reserved",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:03.183Z",
+    "updated_at": "2025-11-24T15:45:03.183Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 61,
+  "fields": {
+    "resource_id": "bdf242d822e61fb026002cdafcea7303",
+    "title": "Pathology Case Study: A 64-year-old man with multiple cerebral lesions",
+    "description": "(This case study was added to OER Commons as one of a batch of over 700. It has relevant information which may include medical imagery, lab results, and history where relevant. A link to the final diagnosis can be found at the end of the case study for review. The first paragraph of the case study -- typically, but not always the clinical presentation -- is provided below.)",
+    "url": "https://oercommons.org/courses/pathology-case-study-a-64-year-old-man-with-multiple-cerebral-lesions",
+    "author": "Ana-Maria Tsanaclis",
+    "resource_type": "other",
+    "tags": "Applied Science, Some Rights Reserved",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:03.301Z",
+    "updated_at": "2025-11-24T15:45:03.301Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 62,
+  "fields": {
+    "resource_id": "90997de306b987598ea651c3e12bc51f",
+    "title": "Pathology Case Study: A 19-year-old male with febrile illness, respiratory failure, and hepatosplenomegaly",
+    "description": "(This case study was added to OER Commons as one of a batch of over 700. It has relevant information which may include medical imagery, lab results, and history where relevant. A link to the final diagnosis can be found at the end of the case study for review. The first paragraph of the case study -- typically, but not always the clinical presentation -- is provided below.)",
+    "url": "https://oercommons.org/courses/pathology-case-study-a-19-year-old-male-with-febrile-illness-respiratory-failure-and-hepatosplenomegaly",
+    "author": "Sara Monaghan",
+    "resource_type": "other",
+    "tags": "Applied Science, Some Rights Reserved",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:03.495Z",
+    "updated_at": "2025-11-24T15:45:03.495Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 63,
+  "fields": {
+    "resource_id": "e4c18ec940be3a67bb1132e4619d01a0",
+    "title": "Pathology Case Study: A 22-year-old girl with  status epilepticus and progressive neurological symptoms",
+    "description": "(This case study was added to OER Commons as one of a batch of over 700. It has relevant information which may include medical imagery, lab results, and history where relevant. A link to the final diagnosis can be found at the end of the case study for review. The first paragraph of the case study -- typically, but not always the clinical presentation -- is provided below.)",
+    "url": "https://oercommons.org/courses/pathology-case-study-a-22-year-old-girl-with-status-epilepticus-and-progressive-neurological-symptoms",
+    "author": "Berge A. Minassiane",
+    "resource_type": "other",
+    "tags": "Applied Science, Some Rights Reserved",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:03.641Z",
+    "updated_at": "2025-11-24T15:45:03.642Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 64,
+  "fields": {
+    "resource_id": "b9a6438e66302647603807a0d925f7cb",
+    "title": "Pathology Case Study: A 54 year-old female with fever and chills",
+    "description": "(This case study was added to OER Commons as one of a batch of over 700. It has relevant information which may include medical imagery, lab results, and history where relevant. A link to the final diagnosis can be found at the end of the case study for review. The first paragraph of the case study -- typically, but not always the clinical presentation -- is provided below.)",
+    "url": "https://oercommons.org/courses/pathology-case-study-a-54-year-old-female-with-fever-and-chills",
+    "author": "Ken Ho",
+    "resource_type": "other",
+    "tags": "Applied Science, Some Rights Reserved",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:03.824Z",
+    "updated_at": "2025-11-24T15:45:03.824Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 65,
+  "fields": {
+    "resource_id": "2e6d2f291e5275a45bc28b6e3408af02",
+    "title": "English Language Arts, Grade 12",
+    "description": "The 12th grade learning experience consists of 7 mostly month-long units aligned to the Common Core State Standards, with available course material for teachers and students easily accessible online. Over the course of the year there is a steady progression in text complexity levels, sophistication of writing tasks, speaking and listening activities, and increased opportunities for independent and collaborative work. Rubrics and student models accompany many writing assignments.Throughout the 12th grade year, in addition to the Common Read texts that the whole class reads together, students each select an Independent Reading book and engage with peers in group Book Talks. Language study is embedded in every 12th grade unit as students use annotation to closely review aspects of each text. Teacher resources provide additional materials to support each unit.",
+    "url": "https://oercommons.org/courseware/8417",
+    "author": "Pearson",
+    "resource_type": "other",
+    "tags": "English Language Arts, Full Course, CC BY-NC",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:03.943Z",
+    "updated_at": "2025-11-24T15:45:03.943Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 66,
+  "fields": {
+    "resource_id": "f730701b7ac21993d24aa167844f6b9f",
+    "title": "الألفاظ الخاة بالعبادة بلغة الإشارة",
+    "description": "عمل مرئي يهتم بزيادة الحصيلة اللغوية والإشارية للأشخاص ذوي الإعاقة السمعية ونشر لغة الإشارة للأشخاص المتكلمين",
+    "url": "https://oercommons.org/courses/%D8%A7%D9%84%D8%A3%D9%84%D9%81%D8%A7%D8%B8-%D8%A7%D9%84%D8%AE%D8%A7%D8%A9-%D8%A8%D8%A7%D9%84%D8%B9%D8%A8%D8%A7%D8%AF%D8%A9-%D8%A8%D9%84%D8%BA%D8%A9-%D8%A7%D9%84%D8%A5%D8%B4%D8%A7%D8%B1%D8%A9",
+    "author": "حمد العبري",
+    "resource_type": "other",
+    "tags": "English Language Arts, CC BY-ND",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:04.087Z",
+    "updated_at": "2025-11-24T15:45:04.087Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 67,
+  "fields": {
+    "resource_id": "6ffe7edf2b56371d143ada100d00d740",
+    "title": "Statewide Dual Credit Speech and Communication, Interpersonal Communication",
+    "description": "Statewide Dual Credit Speech and Communication, Interpersonal Communication",
+    "url": "https://oercommons.org/courseware/unit/8882",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Business and Communication, CC BY",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:04.273Z",
+    "updated_at": "2025-11-24T15:45:04.273Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 68,
+  "fields": {
+    "resource_id": "c768c1c84deb1a8e06c587e707a2ccfc",
+    "title": "Electionland, Electionland",
+    "description": "Electionland, Electionland",
+    "url": "https://oercommons.org/courseware/unit/8976",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "English Language Arts, CC BY-NC-ND",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:04.403Z",
+    "updated_at": "2025-11-24T15:45:04.403Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 69,
+  "fields": {
+    "resource_id": "8db6a85f0054f42f215e9ad3225d216f",
+    "title": "Chinese Massacre of 1871: Not an Isolated Event",
+    "description": "In this lesson, students will learn about the Los Angeles Chinese Massacre of 1871, and identify the causes by examining the attitudes and policies of the time. They will learn about and analyze other massacres that have occurred in the United States in order to gain a better and more nuanced understanding of how and why these acts of violence occur. Lastly, students will research the process for reparations and consider how to address and rectify the harm of such injustices.",
+    "url": "https://oercommons.org/courses/chinese-massacre-of-1871-not-an-isolated-event",
+    "author": "The Asian American Education Project",
+    "resource_type": "article",
+    "tags": "English Language Arts, Lesson Plan, CC BY-NC-ND",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:04.528Z",
+    "updated_at": "2025-11-24T15:45:04.528Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 70,
+  "fields": {
+    "resource_id": "858fdb9e29eac9508f66f35a6d570b8a",
+    "title": "Chinese Massacre of 1871 – Connecting the Past with the Present",
+    "description": "In this lesson, students will learn about the Los Angeles Chinatown Massacre of 1871. They will examine the attitudes and policies of the time which led to the Massacre. Students will learn about recent acts of anti-Asian violence and make connections between the Chinese Massacre and recent anti-Asian violence and attacks.",
+    "url": "https://oercommons.org/courses/chinese-massacre-of-1871-connecting-the-past-with-the-present",
+    "author": "The Asian American Education Project",
+    "resource_type": "article",
+    "tags": "English Language Arts, Lesson Plan, CC BY-NC-ND",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:04.696Z",
+    "updated_at": "2025-11-24T15:45:04.696Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 71,
+  "fields": {
+    "resource_id": "53ef5508a453bfe96a07b37a84408ff5",
+    "title": "Know History, Know Yourself",
+    "description": "In this lesson, students will consider the importance of learning ethnic studies in the classroom and engaging with the lived experiences of their own families and communities, particularly as people of color. They will also learn and discuss concepts of intergenerational trauma in the context of mass incarceration and its effects on Asian Americans and Pacific Islanders by examining the ROOTS (Restoring Our Original True Selves) program at San Quentin State Prison. Lastly, students will learn about the current impact of incarceration on youth of color and relate it to the experiences of ROOTS program participants.",
+    "url": "https://oercommons.org/courses/know-history-know-yourself",
+    "author": "The Asian American Education Project",
+    "resource_type": "article",
+    "tags": "English Language Arts, Lesson Plan, CC BY-NC-ND",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:04.807Z",
+    "updated_at": "2025-11-24T15:45:04.807Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 72,
+  "fields": {
+    "resource_id": "10c7c1b01801052e34159aaabc25e951",
+    "title": "Becoming America: An Exploration of American Literature from Precolonial to Post-Revolution",
+    "description": "The University of North Georgia Press and Affordable Learning Georgia bring you Becoming America: An Exploration of American Literature from Precolonial to Post-Revolution. Featuring sixty-nine authors and full texts of their works, the selections in this open anthology represent the diverse voices in early American literature. This completely-open anthology will connect students to the conversation of literature that is embedded in American history and has helped shaped its culture.",
+    "url": "https://oercommons.org/courses/becoming-america-an-exploration-of-american-literature-from-precolonial-to-post-revolution-2",
+    "author": "Wendy Kurant",
+    "resource_type": "article",
+    "tags": "Composition and Rhetoric, Reading, CC BY-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:04.930Z",
+    "updated_at": "2025-11-24T15:45:04.930Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 73,
+  "fields": {
+    "resource_id": "3958933a79722193ec31131e75728760",
+    "title": "من قواعد اللغة العربية للأشخاص ذوي الإعاقة السمعية",
+    "description": "تحتوي المادة ترجمة إشارية عن قواعد اللغة العربية أقسام الكلام في اللغة العربية ،والجملة في اللغة العربية بلغة الإشارة للأشخاص ذوي الإعاقة السمعية",
+    "url": "https://oercommons.org/courses/%D9%85%D9%86-%D9%82%D9%88%D8%A7%D8%B9%D8%AF-%D8%A7%D9%84%D9%84%D8%BA%D8%A9-%D8%A7%D9%84%D8%B9%D8%B1%D8%A8%D9%8A%D8%A9-%D9%84%D9%84%D8%A3%D8%B4%D8%AE%D8%A7%D8%B5-%D8%B0%D9%88%D9%8A-%D8%A7%D9%84%D8%A5%D8%B9%D8%A7%D9%82%D8%A9-%D8%A7%D9%84%D8%B3%D9%85%D8%B9%D9%8A%D8%A9",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "English Language Arts, CC BY-ND",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:05.051Z",
+    "updated_at": "2025-11-24T15:45:05.051Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 74,
+  "fields": {
+    "resource_id": "850122098178ebcb30bc0243a5d7dae6",
+    "title": "Building a Matrix for Leo Lionni Books: An Author Study",
+    "description": "In this author study, students listen to and discuss four books by Leo Lionni. They identify similarities and differences in the stories and then compare two stories of their choice.",
+    "url": "https://oercommons.org/courses/building-a-matrix-for-leo-lionni-books-an-author-study",
+    "author": "OER Commons",
+    "resource_type": "tool",
+    "tags": "English Language Arts, Activity/Lab, Some Rights Reserved",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:05.170Z",
+    "updated_at": "2025-11-24T15:45:05.170Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 75,
+  "fields": {
+    "resource_id": "af871cba0354ac09988238ab3ea051a3",
+    "title": "The (Not So) Great Garbage Patches",
+    "description": "In this lesson, students learn about plastic pollution and write a letter to a local official advocating for a solution to plastic pollution.",
+    "url": "https://oercommons.org/courses/the-not-so-great-garbage-patches",
+    "author": "OER Commons",
+    "resource_type": "article",
+    "tags": "Author:, Lesson, CC BY-NC",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:05.331Z",
+    "updated_at": "2025-11-24T15:45:05.331Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 76,
+  "fields": {
+    "resource_id": "96b2c3445f2efc90fc99d39c6123e81c",
+    "title": "What Is a Green Space? (Green Spaces #1)",
+    "description": "SYNOPSIS: This lesson introduces the idea of green spaces to students.",
+    "url": "https://oercommons.org/courses/what-is-a-green-space-green-spaces-1",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Author:, CC BY-NC",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:05.518Z",
+    "updated_at": "2025-11-24T15:45:05.518Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 77,
+  "fields": {
+    "resource_id": "a5efb0d804bf4eca30773ad7415dcfcb",
+    "title": "Investigating Local Food: Meet Your Washington Farmers",
+    "description": "This assignment sequence seeks to stimulate students' thinking and writing about food production in the western Washington bioregion through a series of activities combining readings, class discussion, fieldwork, and writing assignments. Collaborative work in and outside of class culminates in students' interviewing local farmers and vendors at farmers markets and writing a surprising informative essay.",
+    "url": "https://oercommons.org/courses/investigating-local-food-meet-your-washington-farmers",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Agriculture, CC BY-NC-SA",
+    "difficulty_level": "intermediate",
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:05.643Z",
+    "updated_at": "2025-11-24T15:45:05.643Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 78,
+  "fields": {
+    "resource_id": "86d3660187ff8c88dc155776b18359bb",
+    "title": "High Stakes and Low Stakes Writing Assignments Handout PDF",
+    "description": "Faculty who want to integrate writing into their courses can use high stakes assignments, low stakes assignments, or some combination of each. This handout defines each kind of writing and explains how you might integrate it into your course.",
+    "url": "https://oercommons.org/courses/high-stakes-and-low-stakes-writing-assignments-handout-pdf",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "Composition and Rhetoric, CC BY-NC-SA",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:05.769Z",
+    "updated_at": "2025-11-24T15:45:05.769Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 79,
+  "fields": {
+    "resource_id": "1c00b18d8076ffc878f3deaab5dbfb0a",
+    "title": "Alabama: A Boundless Field of Speculation",
+    "description": "This lesson looks at the natural resources that drew businesses to Alabama. Students will explore the adapted 1820 letter from Mason and Dexter in Cahaba, Alabama to Richards and Simmons in Cumberland, Rhode Island. Students will explain ideas within this historical text based on specific information presented in this primary source. This lesson can be used as a stand alone or can follow A Natural Attraction: The Natural Resources of Alabama During the Early Nineteenth Century . This lesson was created in partnership with the Alabama Department of Archives and History.",
+    "url": "https://oercommons.org/courses/alabama-a-boundless-field-of-speculation",
+    "author": "OER Commons",
+    "resource_type": "other",
+    "tags": "English Language Arts, Educational Use",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:05.885Z",
+    "updated_at": "2025-11-24T15:45:05.885Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 80,
+  "fields": {
+    "resource_id": "58fd65ad1e6d1f5d5f213e899acacce0",
+    "title": "\"Turn Beauty Inside Out Day\" Winning Essays",
+    "description": "These essays accompany the lesson \"Beauty Is Skin Deep.\"",
+    "url": "https://oercommons.org/courses/turn-beauty-inside-out-day-winning-essays",
+    "author": "Learning for Justice",
+    "resource_type": "article",
+    "tags": "English Language Arts, Lesson, Educational Use",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:06.008Z",
+    "updated_at": "2025-11-24T15:45:06.008Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 81,
+  "fields": {
+    "resource_id": "b2bbf9acd4419a3ecbe861e07d1915cd",
+    "title": "Blogtopia: Blogging about Your Own Utopia",
+    "description": "Students work together to create their own utopias, using blogs as the primary source of publication.",
+    "url": "https://oercommons.org/courses/blogtopia-blogging-about-your-own-utopia",
+    "author": "OER Commons",
+    "resource_type": "tool",
+    "tags": "English Language Arts, Activity/Lab, Some Rights Reserved",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:06.134Z",
+    "updated_at": "2025-11-24T15:45:06.134Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 82,
+  "fields": {
+    "resource_id": "f57e683a10cbb6ea2a7bc6e0a5d0de56",
+    "title": "Profile Publisher",
+    "description": "Students use the Profile Publisher to draft online social networking profiles, yearbook profiles, and newspaper or magazine profiles for themselves, other real or fictional characters.",
+    "url": "https://oercommons.org/courses/profile-publisher",
+    "author": "OER Commons",
+    "resource_type": "tool",
+    "tags": "English Language Arts, Activity/Lab, Some Rights Reserved",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:06.294Z",
+    "updated_at": "2025-11-24T15:45:06.294Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 83,
+  "fields": {
+    "resource_id": "a2e8fbf0e2660db15434bd533cbe9243",
+    "title": "Monster Musical Chairs",
+    "description": "Students listen to the story and identify the scarcity problem the monsters had not enough chairs for every monster to have one. Students wear a picture of a want they have drawn and play a version of musical chairs in which the chairs are labeled goods. Students learn that a good can satisfy a want. They also learn that, because of scarcity, not everyone's wants are satisfied.",
+    "url": "https://oercommons.org/courses/monster_musical_chairs-2",
+    "author": "Bonnie Meszaros",
+    "resource_type": "article",
+    "tags": "Economics, Lesson, Educational Use",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:06.455Z",
+    "updated_at": "2025-11-24T15:45:06.455Z"
+  }
+},
+{
+  "model": "resources.educationalresource",
+  "pk": 84,
+  "fields": {
+    "resource_id": "9a7dd470da59e47af7274c24f93035fd",
+    "title": "The Fight for Ethnic Studies",
+    "description": "This lesson focuses on the birth of Ethnic Studies through the two longest student strikes in the country’s history, led by youth of color forming the Third World Liberation Front (TWLF) at San Francisco State University and University of California, Berkeley. Students will explore the strikes’ causes, methods, and the resistance mounted by the schools and how educational experiences may be shaped by the addition of ethnic studies.",
+    "url": "https://oercommons.org/courses/the-fight-for-ethnic-studies",
+    "author": "The Asian American Education Project",
+    "resource_type": "article",
+    "tags": "English Language Arts, Lesson Plan, CC BY-NC-ND",
+    "difficulty_level": null,
+    "lti_context_id": null,
+    "created_at": "2025-11-24T15:45:06.574Z",
+    "updated_at": "2025-11-24T15:45:06.574Z"
+  }
+},
+{
+  "model": "interactions.userinteraction",
+  "pk": 1,
+  "fields": {
+    "lti_user_id": "3",
+    "lti_context_id": "2",
+    "resource": 4,
+    "interaction_type": "viewed",
+    "value": 120.5,
+    "timestamp": "2025-07-24T17:16:54.366Z"
+  }
+},
+{
+  "model": "interactions.userinteraction",
+  "pk": 2,
+  "fields": {
+    "lti_user_id": "3",
+    "lti_context_id": "2",
+    "resource": 2,
+    "interaction_type": "viewed",
+    "value": 120.5,
+    "timestamp": "2025-07-25T15:28:31.493Z"
+  }
+},
+{
+  "model": "interactions.userinteraction",
+  "pk": 3,
+  "fields": {
+    "lti_user_id": "2",
+    "lti_context_id": "2",
+    "resource": 2,
+    "interaction_type": "viewed",
+    "value": 120.5,
+    "timestamp": "2025-07-25T15:28:42.845Z"
+  }
+}
+]

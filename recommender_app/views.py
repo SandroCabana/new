@@ -1,6 +1,7 @@
 # lti_recommender_project/recommender_app/views.py
 
 from django.shortcuts import render, redirect
+from django.http import JsonResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -132,42 +133,62 @@ def lti_launch(request):
 
 def get_recommendations_from_api(user_id, context_id):
     """
-    Función para obtener recomendaciones reales consultando la base de datos de EducationalResource.
-    Por ahora, filtra recursos por el ID del curso.
+    Función para obtener recomendaciones usando el nuevo motor híbrido.
+    Combina similitud semántica, preferencias de usuario y popularidad.
     """
-    recommended_resources = []
     try:
-        # Filtra los recursos por el lti_context_id del curso actual
-        # Asegúrate de que los recursos que agregaste en el admin tengan el mismo lti_context_id
-        # que el curso de Moodle desde el que estás lanzando (ej. "2" para "base de datos I").
-        resources_from_db = EducationalResource.objects.filter(lti_context_id=context_id).order_by('?')[:5] # Limita a 5, orden aleatorio
-
-        if not resources_from_db.exists():
-            logger.info(f"No se encontraron recursos para el contexto LTI: {context_id}. Intentando buscar recursos genéricos.")
-            # Si no hay recursos específicos del curso, busca algunos recursos sin contexto LTI asignado
-            resources_from_db = EducationalResource.objects.filter(lti_context_id__isnull=True).order_by('?')[:5]
+        from lti_recommender_project.apps.recommendations.services.recommendation_engine import get_recommendation_engine
+        from lti_recommender_project.apps.users.services.user_profile_service import UserProfileService
+        
+        # Crear o actualizar perfil de usuario
+        UserProfileService.get_or_create_profile(user_id)
+        
+        # Obtener recomendaciones del motor híbrido
+        engine = get_recommendation_engine()
+        recommendations = engine.get_recommendations(
+            user_id=user_id,
+            context_id=context_id,
+            limit=5,
+            exclude_viewed=True
+        )
+        
+        # Convertir scores a porcentajes para mejor visualización
+        for rec in recommendations:
+            rec['score'] = rec['score'] * 100  # Convertir 0-1 a 0-100
+        
+        if not recommendations:
+            logger.info(f"No se encontraron recomendaciones para usuario {user_id}. Usando fallback.")
+            # Fallback: recursos del contexto ordenados aleatoriamente
+            from lti_recommender_project.apps.resources.models import EducationalResource
+            resources_from_db = EducationalResource.objects.filter(
+                lti_context_id=context_id
+            ).order_by('?')[:5]
+            
             if not resources_from_db.exists():
-                logger.info("No se encontraron recursos genéricos.")
-                return [
-                    {"title": "No hay recomendaciones disponibles para este curso. Intenta añadir más recursos.", "url": "#"}
-                ]
-
-        for resource in resources_from_db:
-            recommended_resources.append({
-                "title": resource.title,
-                "url": resource.url,
-                "description": resource.description, # Puedes usar la descripción en la plantilla si la modificas
-                "type": resource.resource_type,      # Puedes usar el tipo en la plantilla
-            })
-
+                resources_from_db = EducationalResource.objects.filter(
+                    lti_context_id__isnull=True
+                ).order_by('?')[:5]
+            
+            recommendations = [
+                {
+                    "title": res.title,
+                    "url": res.url,
+                    "description": res.description,
+                    "type": res.resource_type,
+                    "difficulty": res.difficulty_level,
+                    "score": 50  # Score neutro para fallback
+                }
+                for res in resources_from_db
+            ]
+        
+        return recommendations
+        
     except Exception as e:
-        logger.error(f"Error al obtener recomendaciones de la base de datos: {e}")
-        # En caso de error, devuelve un conjunto de recomendaciones de fallback
+        logger.error(f"Error al obtener recomendaciones del motor: {e}")
+        # Fallback en caso de error
         return [
-            {"title": "Error al cargar recomendaciones desde la base de datos.", "url": "#"}
+            {"title": "Error al cargar recomendaciones. Intenta de nuevo más tarde.", "url": "#", "score": 0}
         ]
-    
-    return recommended_resources
 
 
 @csrf_exempt
@@ -178,11 +199,12 @@ def jwks(request):
     y verificar la firma de los JWTs que tu herramienta le envíe.
     """
     try:
-        # Renderiza el conjunto de claves públicas de la herramienta.
-        return DjangoJwks.render_jwks(tool_conf)
+        # Obtiene el conjunto de claves públicas de la herramienta en formato JWKS
+        jwks_dict = tool_conf.get_jwks()
+        return JsonResponse(jwks_dict, safe=False)
     except Exception as e:
         logger.exception("Error generating JWKS:")
-        return render(request, 'recommender_app/error.html', {'message': f'Error al generar JWKS: {e}'})
+        return JsonResponse({'error': f'Error al generar JWKS: {str(e)}'}, status=500)
 @api_view(['POST'])
 def record_interaction(request):
     """

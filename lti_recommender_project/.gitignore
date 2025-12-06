@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+venv_lti_recommender/
+env/
+ENV/
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+/media
+/static_root
+
+# ML
+*.pkl
+*.joblib
+*.h5
+*.pt
+/ml/saved_models/*
+!/ml/saved_models/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+*.pem
+
+# Scraper
+scraper/data/*
+!/scraper/data/.gitkeep
+*.json

@@ -1,12 +1,16 @@
 # Define here the models for your scraped items
-#
-# See documentation in:
-# https://docs.scrapy.org/en/latest/topics/items.html
-
 import scrapy
 
 
-class ScraperProjectItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+class EducationalResourceItem(scrapy.Item):
+    """Item for scraped educational resources"""
+    resource_id = scrapy.Field()
+    title = scrapy.Field()
+    description = scrapy.Field()
+    url = scrapy.Field()
+    author = scrapy.Field()
+    resource_type = scrapy.Field()
+    tags = scrapy.Field()
+    difficulty_level = scrapy.Field()
+    lti_context_id = scrapy.Field()
+    source = scrapy.Field()  # Where the resource was scraped from

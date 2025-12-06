@@ -17,13 +17,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:   path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include # <-- ¡Añade 'include' aquí!
+from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # ¡Añade esta línea para incluir las URLs de tu aplicación recommender_app!
-    # Esto hará que las rutas definidas en recommender_app/urls.py
-    # (como 'lti/login/', 'lti/launch/', 'lti/jwks/')
-    # sean accesibles directamente desde la raíz de tu dominio (ej. http://127.0.0.1:8000/lti/login/)
-    path('', include('recommender_app.urls')),
+    # LTI Integration and API endpoints
+    path('', include('lti_recommender_project.apps.lti_integration.urls')),
 ]

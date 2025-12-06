@@ -7,8 +7,12 @@ class UserInteractionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserInteraction
-        # Campos que la API recibirá y/o devolverá
-        fields = ['lti_user_id', 'lti_context_id', 'resource_id', 'interaction_type', 'value', 'timestamp']
+        # Campos que la API recibirá y/o devolverá (incluye nuevos campos de tracking)
+        fields = [
+            'lti_user_id', 'lti_context_id', 'resource_id', 'interaction_type', 'value', 
+            'time_spent', 'completion_percentage', 'rating', 'scroll_depth',
+            'downloaded', 'shared', 'metadata', 'timestamp'
+        ]
         # timestamp es auto_now_add, por lo que no es necesario enviarlo en la creación
         read_only_fields = ['timestamp']
 
@@ -34,4 +38,18 @@ class UserInteractionSerializer(serializers.ModelSerializer):
 
         # Crea la interacción de usuario con el objeto EducationalResource
         user_interaction = UserInteraction.objects.create(resource=resource, **validated_data)
+        
+        # Actualizar perfil de usuario automáticamente
+        try:
+            from lti_recommender_project.apps.users.services.user_profile_service import UserProfileService
+            UserProfileService.update_profile_from_interaction(
+                validated_data.get('lti_user_id'),
+                user_interaction
+            )
+        except Exception as e:
+            # No fallar si la actualización del perfil falla, solo loguear
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"No se pudo actualizar el perfil de usuario: {e}")
+        
         return user_interaction

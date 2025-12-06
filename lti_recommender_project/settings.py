@@ -37,10 +37,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'recommender_app',
-    'rest_framework',
-    'pylti1p3.contrib.django.lti1p3_tool_config',  # Asegúrate de que este módulo esté instalado
     
+    # Third party apps
+    'rest_framework',
+    'pylti1p3.contrib.django.lti1p3_tool_config',
+    
+    # Project apps
+    'lti_recommender_project.apps.resources',
+    'lti_recommender_project.apps.interactions',
+    'lti_recommender_project.apps.lti_integration',
+    'lti_recommender_project.apps.users',
+    'lti_recommender_project.apps.recommendations',
 ]
 
 # ... (otras configuraciones)
@@ -106,8 +113,16 @@ WSGI_APPLICATION = 'lti_recommender_project.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'lti_recommender_db',
+        'USER': 'lti_user',
+        'PASSWORD': 'lti_user',
+        'HOST': 'localhost',
+        'PORT': '5432',
+        'OPTIONS': {
+            'connect_timeout': 10,
+        },
+        'CONN_MAX_AGE': 600,  # Conexiones persistentes para mejor rendimiento
     }
 }
 
@@ -158,3 +173,16 @@ CACHES = {
         'LOCATION': 'unique-snowflake', # Un nombre único para tu caché
     }
 }
+
+# Recommendation Engine Settings
+RECOMMENDATION_CONFIG = {
+    'EMBEDDING_MODEL': 'sentence-transformers/all-MiniLM-L6-v2',
+    'EMBEDDING_DIMENSION': 384,
+    'SIMILARITY_THRESHOLD': 0.3,
+    'CONTENT_WEIGHT': 0.5,
+    'USER_WEIGHT': 0.3,
+    'POPULARITY_WEIGHT': 0.2,
+}
+
+# Usar la configuración de embedding en las apps
+EMBEDDING_MODEL = RECOMMENDATION_CONFIG['EMBEDDING_MODEL']

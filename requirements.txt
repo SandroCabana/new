@@ -14,3 +14,10 @@ requests==2.32.4
 sqlparse==0.5.3
 typing_extensions==4.14.1
 urllib3==2.5.0
+psycopg2-binary
+
+# Machine Learning & NLP for Semantic Similarity
+sentence-transformers>=2.2.0
+torch>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
