@@ -57,7 +57,7 @@ WORKDIR /app
 
 # Copy Python dependencies from builder
 COPY --from=builder --chown=django:django /root/.local /root/.local
-COPY --from=builder --chown=django:django /root/.cache /root/.cache
+# Note: .cache directory removed - models download on first use
 
 # Copy application code
 COPY --chown=django:django . .
