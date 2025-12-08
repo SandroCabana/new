@@ -51,6 +51,8 @@ db.sqlite3-journal
 
 # Environment
 .env
+.env.production
+.env.*
 *.pem
 
 # Scraper
