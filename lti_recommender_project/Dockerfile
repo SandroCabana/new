@@ -25,7 +25,8 @@ COPY requirements.txt .
 RUN pip install --user --no-warn-script-location -r requirements.txt
 
 # Download ML models (sentence-transformers) to avoid downloading in each container
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"
+# COMMENTED: Causes version conflicts during build. Model downloads on first use instead.
+# RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"
 
 # ==============================================================================
 # STAGE 2: Runtime - Minimal production image

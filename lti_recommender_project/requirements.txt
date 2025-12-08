@@ -16,9 +16,9 @@ dj-database-url==2.1.0
 redis==5.0.1
 hiredis==2.3.2
 
-# Machine Learning
-sentence-transformers==2.2.2
-torch==2.1.2
+# Machine Learning - Updated for compatibility
+sentence-transformers==2.5.1
+torch==2.2.0
 scikit-learn==1.4.0
 pandas==2.2.0
 numpy==1.26.3
