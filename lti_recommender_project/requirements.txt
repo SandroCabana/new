@@ -5,7 +5,7 @@ django-cors-headers==4.3.1
 django-environ==0.11.2
 
 # LTI Integration
-pylti1p3==2.6.0
+PyLTI1p3==2.0.0
 PyJWT==2.8.0
 
 # Database
