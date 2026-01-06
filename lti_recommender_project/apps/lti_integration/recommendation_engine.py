@@ -292,7 +292,8 @@ class RecommendationEngine:
                 "author": resource.author or "Desconocido",
                 "tags": resource.tags or "",
                 "difficulty": resource.difficulty_level or "N/A",
-                "score": score  # Porcentaje de confianza (0-100)
+                "score": score,  # Porcentaje de confianza (0-100)
+                "id": resource.id  # ID del recurso para tracking
             }
             for resource, source, score in resources
         ]

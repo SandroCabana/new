@@ -86,7 +86,7 @@ TEMPLATES = [
     },
 ]
 LTI_TOOL_CONFIG = {
-    'CLIENT_ID': 'HzDcDuQZIXoITpL', # Este lo obtendrás de Moodle
+    'CLIENT_ID': 'IYJra9nMaKaT6Lx', # Este lo obtendrás de Moodle
     'JWKS_URL': 'http://127.0.0.1:8000/lti/jwks/', # URL de tus claves públicas
     'AUTH_LOGIN_URL': 'http://127.0.0.1:8000/lti/login/', # Endpoint de inicio de sesión OIDC
     'LAUNCH_URL': 'http://127.0.0.1:8000/lti/launch/', # Endpoint de lanzamiento LTI
@@ -118,7 +118,7 @@ DATABASES = {
         'USER': 'lti_user',
         'PASSWORD': 'lti_user',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': '5433',
         'OPTIONS': {
             'connect_timeout': 10,
         },

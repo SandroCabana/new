@@ -15,7 +15,8 @@ from pylti1p3.exception import LtiException
 
 # Importaciones para la API (Django REST Framework)
 from rest_framework import status 
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 # Importar modelos desde las nuevas apps
@@ -103,7 +104,7 @@ def get_recommendations_from_api(user_id, context_id):
     Función para obtener recomendaciones usando el motor de ML.
     """
     try:
-        from .recommendation_engine import RecommendationEngine
+        from lti_recommender_project.apps.recommendations.services.recommendation_engine import RecommendationEngine
         
         engine = RecommendationEngine()
         recommendations = engine.get_recommendations(
@@ -160,7 +161,10 @@ def jwks(request):
         return JsonResponse({'error': f'Error al generar JWKS: {str(e)}'}, status=500)
 
 
+@csrf_exempt
 @api_view(['POST'])
+@authentication_classes([])
+@permission_classes([AllowAny])
 def record_interaction(request):
     """
     Endpoint API para registrar interacciones de usuarios con recursos educativos.

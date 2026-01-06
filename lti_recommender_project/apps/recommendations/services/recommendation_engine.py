@@ -110,6 +110,7 @@ class RecommendationEngine:
                     'description': resource.description,
                     'type': resource.resource_type,
                     'difficulty': resource.difficulty_level,
+                    'id': resource.id,
                 })
             
             # Ordenar por score descendente

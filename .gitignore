@@ -1,0 +1,23 @@
+
+# venv/ virtual environment
+venv/
+venv_lti_recommender/
+
+env/
+# Python cache files
+__pycache__/
+*.pyc
+# Scrapy specific files
+.scrapy/
+# Logs
+logs/
+*.log
+# Output data files
+output/
+*.json
+*.csv
+# IDE specific files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace

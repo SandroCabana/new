@@ -25,7 +25,7 @@ class OERComprehensiveSpider(scrapy.Spider):
     }
     
     custom_settings = {
-        'CLOSESPIDER_ITEMCOUNT': 30,
+        'CLOSESPIDER_ITEMCOUNT': 100,
         'DOWNLOAD_DELAY': 2,
     }
 
