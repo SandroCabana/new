@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     
     # Third party apps
     'rest_framework',
+    'rest_framework.authtoken',
     'pylti1p3.contrib.django.lti1p3_tool_config',
     
     # Project apps
@@ -186,3 +187,12 @@ RECOMMENDATION_CONFIG = {
 
 # Usar la configuración de embedding en las apps
 EMBEDDING_MODEL = RECOMMENDATION_CONFIG['EMBEDDING_MODEL']
+
+# REST Framework Configuration
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+}

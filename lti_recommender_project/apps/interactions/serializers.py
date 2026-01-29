@@ -30,3 +30,99 @@ class UserInteractionSerializer(serializers.ModelSerializer):
         model = UserInteraction
         fields = ['id', 'lti_user_id', 'lti_context_id', 'resource', 'interaction_type', 'value', 'timestamp']
         read_only_fields = ['id', 'timestamp']
+
+
+class TrackedFeedbackSerializer(serializers.Serializer):
+    score = serializers.FloatField(required=False, allow_null=True)
+    comments = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+
+class TrackedDataSerializer(serializers.Serializer):
+    activityType = serializers.CharField()
+    associatedURL = serializers.CharField()
+    associatedDomains = serializers.ListField(
+        child=serializers.CharField(),
+        required=False, allow_empty=True
+    )
+    associatedKeywords = serializers.ListField(
+        child=serializers.CharField(),
+        required=False, allow_empty=True
+    )
+    startTime = serializers.DateTimeField()
+    endTime = serializers.DateTimeField()
+    feedback = TrackedFeedbackSerializer(required=False, allow_null=True)
+
+
+class TrackedBatchSerializer(serializers.Serializer):
+    userID = serializers.IntegerField() # Cast to string in view
+    associatedPLE = serializers.CharField()
+    trackedDataList = serializers.ListField(
+        child=TrackedDataSerializer(),
+        allow_empty=False
+    )
+
+
+# =============================================
+# Serializers for User History and Preview APIs
+# =============================================
+
+class ResourceSummarySerializer(serializers.Serializer):
+    """Lightweight resource representation for history views."""
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+    url = serializers.CharField()
+    resource_type = serializers.CharField()
+
+
+class UserInteractionDetailSerializer(serializers.Serializer):
+    """Detailed interaction for user history endpoint."""
+    id = serializers.IntegerField()
+    resource = ResourceSummarySerializer()
+    interaction_type = serializers.CharField()
+    time_spent = serializers.FloatField(allow_null=True)
+    rating = serializers.IntegerField(allow_null=True)
+    completion_percentage = serializers.FloatField(allow_null=True)
+    timestamp = serializers.DateTimeField()
+    metadata = serializers.JSONField(allow_null=True)
+
+
+class UserStatsSerializer(serializers.Serializer):
+    """Aggregated statistics for a user."""
+    total_interactions = serializers.IntegerField()
+    total_resources = serializers.IntegerField()
+    total_time_spent = serializers.FloatField()
+    average_rating = serializers.FloatField(allow_null=True)
+    resource_type_breakdown = serializers.DictField(
+        child=serializers.IntegerField()
+    )
+    most_visited_resources = ResourceSummarySerializer(many=True)
+    first_interaction_date = serializers.DateTimeField(allow_null=True)
+    last_interaction_date = serializers.DateTimeField(allow_null=True)
+
+
+class PreviewResourceSerializer(serializers.Serializer):
+    """Resource info that will be created/updated in preview."""
+    url = serializers.CharField()
+    title = serializers.CharField()
+    is_new = serializers.BooleanField()
+    resource_type = serializers.CharField()
+
+
+class PreviewInteractionSerializer(serializers.Serializer):
+    """Interaction that will be created in preview."""
+    resource_url = serializers.CharField()
+    interaction_type = serializers.CharField()
+    time_spent = serializers.FloatField()
+    rating = serializers.FloatField(allow_null=True)
+    domains = serializers.ListField(child=serializers.CharField())
+    keywords = serializers.ListField(child=serializers.CharField())
+
+
+class PreviewResponseSerializer(serializers.Serializer):
+    """Response for the preview endpoint showing what will be saved."""
+    user_id = serializers.CharField()
+    context_id = serializers.CharField()
+    resources_to_create = PreviewResourceSerializer(many=True)
+    resources_to_update = PreviewResourceSerializer(many=True)
+    interactions_to_create = PreviewInteractionSerializer(many=True)
+    summary = serializers.DictField()

@@ -1,23 +1,180 @@
+# =====================================================
+# LTI Moodle Recommender - .gitignore
+# =====================================================
 
-# venv/ virtual environment
-venv/
-venv_lti_recommender/
-
-env/
-# Python cache files
+# =====================================================
+# Python
+# =====================================================
 __pycache__/
-*.pyc
-# Scrapy specific files
-.scrapy/
-# Logs
-logs/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# =====================================================
+# Virtual Environments
+# =====================================================
+venv/
+venv_*/
+ENV/
+env/
+.venv/
+.env/
+
+# =====================================================
+# Django
+# =====================================================
 *.log
-# Output data files
-output/
-*.json
-*.csv
-# IDE specific files
+db.sqlite3
+db.sqlite3-journal
+/media/
+/static_root/
+/staticfiles/
+
+# =====================================================
+# Machine Learning Models (large files)
+# =====================================================
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+*.onnx
+*.ckpt
+*.safetensors
+lti_recommender_project/ml/saved_models/*
+!lti_recommender_project/ml/saved_models/.gitkeep
+
+# ML Datasets (large files)
+lti_recommender_project/ml/datasets/*.csv
+!lti_recommender_project/ml/datasets/.gitkeep
+
+# =====================================================
+# Security - NEVER commit these
+# =====================================================
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Environment files with secrets
+.env
+.env.local
+.env.development
+.env.production
+.env.*
+!.env.example
+
+# =====================================================
+# IDE / Editor
+# =====================================================
 .vscode/
 .idea/
+*.swp
+*.swo
 *.sublime-project
 *.sublime-workspace
+.spyderproject
+.spyproject
+
+# =====================================================
+# OS Generated
+# =====================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+*.bak
+
+# =====================================================
+# Scrapy
+# =====================================================
+.scrapy/
+scraper_project/*.json
+!scraper_project/scrapy.cfg
+scraper_project/scraper_project/output.json
+
+# =====================================================
+# Data files (generated/temporary)
+# =====================================================
+*.json
+!browser_extension/manifest.json
+!package.json
+!package-lock.json
+!tsconfig.json
+*.csv
+*.xlsx
+*.xls
+
+# Backup files
+data_backup.json
+datadump.json
+migration_data.json
+lti_recommender_project/datadump.json
+
+# =====================================================
+# Logs and temp files
+# =====================================================
+logs/
+*.log
+*.tmp
+*.temp
+.cache/
+*.cache
+
+# =====================================================
+# Testing / Coverage
+# =====================================================
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# =====================================================
+# Docker
+# =====================================================
+*.log
+docker-compose.override.yml
+
+# =====================================================
+# Node.js (if any frontend)
+# =====================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =====================================================
+# Browser Extension (sensitive)
+# =====================================================
+browser_extension/icons/*.png
+!browser_extension/icons/.gitkeep

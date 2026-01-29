@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LTI Learning Tracker</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1>📚 LTI Tracker</h1>
+      <div class="status-indicator" id="status-indicator">
+        <span class="status-dot"></span>
+        <span id="status-text">Desactivado</span>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="track">Tracking</button>
+      <button class="tab" data-tab="history">Historial</button>
+      <button class="tab" data-tab="settings">Config</button>
+    </nav>
+
+    <!-- Tab Content: Track -->
+    <section id="track-panel" class="panel active">
+      <div class="tracking-controls">
+        <button id="toggle-tracking" class="btn btn-primary btn-large">
+          <span class="btn-icon">▶</span>
+          <span id="toggle-text">Iniciar Sesión</span>
+        </button>
+        <p class="hint">Inicia una sesión para trackear tu navegación de aprendizaje</p>
+      </div>
+
+      <div id="session-info" class="session-info hidden">
+        <h3>Sesión Activa</h3>
+        <div class="stat-row">
+          <span>Páginas visitadas:</span>
+          <span id="pages-count">0</span>
+        </div>
+        <div class="stat-row">
+          <span>Tiempo total:</span>
+          <span id="session-time">00:00</span>
+        </div>
+      </div>
+
+      <div id="pending-data" class="pending-data hidden">
+        <h3>Datos Pendientes</h3>
+        <div id="pending-list" class="pending-list"></div>
+        <div class="preview-actions">
+          <button id="preview-btn" class="btn btn-secondary">Vista Previa</button>
+          <button id="send-btn" class="btn btn-success">Enviar al Servidor</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab Content: History -->
+    <section id="history-panel" class="panel">
+      <div class="history-header">
+        <h3>Historial de Interacciones</h3>
+        <button id="refresh-history" class="btn btn-small">🔄 Actualizar</button>
+      </div>
+
+      <div id="stats-summary" class="stats-summary">
+        <div class="stat-card">
+          <div class="stat-value" id="total-interactions">-</div>
+          <div class="stat-label">Interacciones</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="total-resources">-</div>
+          <div class="stat-label">Recursos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="total-time">-</div>
+          <div class="stat-label">Tiempo Total</div>
+        </div>
+      </div>
+
+      <div id="history-list" class="history-list">
+        <p class="placeholder">Conecta para ver tu historial</p>
+      </div>
+    </section>
+
+    <!-- Tab Content: Settings -->
+    <section id="settings-panel" class="panel">
+      <h3>Configuración</h3>
+
+      <div class="setting-group">
+        <label for="api-url">URL del API</label>
+        <input type="url" id="api-url" placeholder="https://your-server.com">
+      </div>
+
+      <div class="setting-group">
+        <label for="context-id">Contexto (Curso)</label>
+        <input type="text" id="context-id" placeholder="ID del curso en Moodle">
+      </div>
+
+      <div class="setting-group" id="auth-section">
+        <h4>Autenticación Moodle</h4>
+
+        <!-- Login Form (shown when not connected) -->
+        <div id="login-form" class="login-form">
+          <p class="hint">Inicia sesión con tu correo institucional o usuario de Moodle</p>
+          <div class="form-group">
+            <label for="login-email">Email / Usuario</label>
+            <input type="text" id="login-email" placeholder="tu.email@institucion.edu" autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="login-password">Contraseña</label>
+            <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+          </div>
+          <div id="login-error" class="error-message hidden"></div>
+          <button id="login-btn" class="btn btn-primary">
+            🔐 Iniciar Sesión
+          </button>
+        </div>
+
+        <!-- User Info (shown when connected) -->
+        <div id="user-info" class="user-info hidden">
+          <span>✓ Conectado como: </span>
+          <strong id="user-name"></strong>
+          <button id="disconnect" class="btn btn-danger btn-small">Cerrar Sesión</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <button id="save-settings" class="btn btn-success">💾 Guardar Configuración</button>
+      </div>
+
+      <div class="setting-group">
+        <button id="clear-local" class="btn btn-danger">🗑️ Borrar Datos Locales</button>
+      </div>
+    </section>
+
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Vista Previa de Datos</h3>
+          <button class="modal-close" id="close-modal">×</button>
+        </div>
+        <div class="modal-body">
+          <div id="preview-summary" class="preview-summary"></div>
+          <div id="preview-items" class="preview-items"></div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancel-send" class="btn btn-secondary">Cancelar</button>
+          <button id="confirm-send" class="btn btn-success">✓ Confirmar y Enviar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+
+</html>

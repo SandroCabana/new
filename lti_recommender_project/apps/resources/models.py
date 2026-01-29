@@ -12,7 +12,7 @@ class EducationalResource(models.Model):
     description = models.TextField(blank=True, null=True, help_text="Breve descripción del recurso.")
     
     # URL donde se encuentra el recurso
-    url = models.URLField(max_length=500, help_text="URL donde el recurso está disponible.")
+    url = models.TextField(help_text="URL donde el recurso está disponible.")
     
     # Metadatos del recurso (ejemplos, puedes añadir más según tu necesidad)
     author = models.CharField(max_length=255, blank=True, null=True, help_text="Autor o creador del recurso.")

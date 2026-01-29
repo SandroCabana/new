@@ -23,4 +23,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     # LTI Integration and API endpoints
     path('', include('lti_recommender_project.apps.lti_integration.urls')),
+    path('interactions/', include('lti_recommender_project.apps.interactions.urls')),
+    path('analytics/', include('lti_recommender_project.apps.analytics.urls')),
+    # Authentication for browser extension
+    path('auth/', include('lti_recommender_project.apps.users.urls')),
 ]

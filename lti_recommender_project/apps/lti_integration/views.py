@@ -101,17 +101,26 @@ def lti_launch(request):
 
 def get_recommendations_from_api(user_id, context_id):
     """
-    Función para obtener recomendaciones usando el motor de ML.
+    Función para obtener recomendaciones usando el ensemble de modelos ML.
+    Combina: SVD, NCF, Sequential (GRU4Rec), Factorization Machine, y motor híbrido.
     """
     try:
-        from lti_recommender_project.apps.recommendations.services.recommendation_engine import RecommendationEngine
+        from lti_recommender_project.ml.models.ensemble import get_ensemble_recommender
         
-        engine = RecommendationEngine()
+        # Usar EnsembleRecommender que integra todos los modelos ML entrenados
+        engine = get_ensemble_recommender(strategy='weighted_average')
         recommendations = engine.get_recommendations(
             user_id=user_id,
             context_id=context_id,
             limit=5,
             exclude_viewed=True
+        )
+        
+        # Log para confirmar qué modelos ML se usaron
+        model_info = engine.get_model_info()
+        logger.info(
+            f"Ensemble ML recommendations for user {user_id}: "
+            f"used {model_info['n_models']} models: {model_info['models']}"
         )
         
         if not recommendations:
@@ -133,7 +142,8 @@ def get_recommendations_from_api(user_id, context_id):
                     "description": resource.description or "",
                     "type": resource.resource_type,
                     "difficulty": resource.difficulty_level,
-                    "score": 50  # Score neutro para fallback (50%)
+                    "score": 50,  # Score neutro para fallback (50%)
+                    "source": "fallback"
                 }
                 for resource in resources_from_db
             ]
@@ -143,7 +153,7 @@ def get_recommendations_from_api(user_id, context_id):
         ]
         
     except Exception as e:
-        logger.error(f"Error al obtener recomendaciones: {e}")
+        logger.error(f"Error al obtener recomendaciones ML: {e}", exc_info=True)
         return [{"title": "Error al cargar recomendaciones.", "url": "#"}]
 
 
