@@ -52,14 +52,132 @@ def retrain_all_models(self):
 
     # Sequential
     try:
-        from lti_recommender_project.ml.models.sequential_rec import SequentialRecommendationModel
-        seq = SequentialRecommendationModel()
+        from lti_recommender_project.ml.models.sequential_rec import SequentialRecommender
+        seq = SequentialRecommender()
         metrics = seq.fit(save_model=True)
         results['sequential'] = {'status': 'ok', 'metrics': metrics}
         logger.info(f"Sequential model retrained")
     except Exception as e:
         logger.error(f"Sequential retrain failed: {e}")
         results['sequential'] = {'status': 'error', 'error': str(e)}
+
+    # Auto-adjust ensemble weights based on training results
+    try:
+        from lti_recommender_project.ml.models.ensemble import get_ensemble_recommender
+        ensemble = get_ensemble_recommender()
+        new_weights = ensemble.auto_adjust_weights(results)
+        results['ensemble_weights'] = new_weights
+        logger.info(f"Ensemble weights auto-adjusted: {new_weights}")
+    except Exception as e:
+        logger.error(f"Ensemble weight adjustment failed: {e}")
+
+    # ---- Persist training metrics to DB ----
+    try:
+        from lti_recommender_project.apps.analytics.models import ModelEvaluationResult
+        from django.utils import timezone
+
+        now = timezone.now()
+        ensemble_weights = results.get('ensemble_weights', {})
+
+        for model_name in ['svd', 'ncf', 'sequential']:
+            model_result = results.get(model_name, {})
+            if model_result.get('status') != 'ok':
+                continue
+
+            m = model_result.get('metrics', {})
+            ModelEvaluationResult.objects.create(
+                model_name=model_name,
+                evaluated_at=now,
+                train_loss=m.get('train_loss') or m.get('final_loss'),
+                train_rmse=m.get('rmse_mean'),
+                test_rmse=m.get('test_rmse'),
+                test_hit_rate_at_10=m.get('test_hit_rate_at_10'),
+                n_users=m.get('n_users'),
+                n_items=m.get('n_items'),
+                n_interactions=m.get('n_interactions') or m.get('n_ratings') or m.get('n_sequences'),
+                ensemble_weight=ensemble_weights.get(model_name),
+                raw_metrics=m,
+            )
+            logger.info(f"Saved training metrics for {model_name}")
+
+        logger.info("Training metrics persisted to DB")
+    except Exception as e:
+        logger.error(f"Failed to persist training metrics: {e}", exc_info=True)
+
+    # ---- Run offline evaluation and persist ----
+    try:
+        from lti_recommender_project.ml.training.evaluate_models import ModelEvaluator
+        from lti_recommender_project.apps.analytics.models import ModelEvaluationResult
+        from django.utils import timezone
+
+        evaluator = ModelEvaluator(k=5, test_ratio=0.2, min_interactions=3, max_users=50)
+        eval_time = timezone.now()
+        ensemble_weights = results.get('ensemble_weights', {})
+
+        eval_targets = []
+
+        # SVD
+        try:
+            from lti_recommender_project.ml.models.matrix_factorization import get_svd_model
+            svd_m = get_svd_model()
+            if svd_m._is_fitted:
+                eval_targets.append(('svd', svd_m.get_recommendations))
+        except Exception:
+            pass
+
+        # NCF
+        try:
+            from lti_recommender_project.ml.models.neural_cf import get_ncf_model
+            ncf_m = get_ncf_model()
+            if ncf_m._is_fitted:
+                eval_targets.append(('ncf', ncf_m.get_recommendations))
+        except Exception:
+            pass
+
+        # Sequential
+        try:
+            from lti_recommender_project.ml.models.sequential_rec import get_sequential_model
+            seq_m = get_sequential_model()
+            if seq_m._is_fitted:
+                eval_targets.append(('sequential', seq_m.get_recommendations))
+        except Exception:
+            pass
+
+        # Ensemble
+        try:
+            from lti_recommender_project.ml.models.ensemble import get_ensemble_recommender
+            ens = get_ensemble_recommender()
+            eval_targets.append(('ensemble', ens.get_recommendations))
+        except Exception:
+            pass
+
+        for model_name, get_recs_fn in eval_targets:
+            try:
+                eval_result = evaluator.evaluate_model(get_recs_fn, model_name)
+                if 'error' not in eval_result:
+                    ModelEvaluationResult.objects.create(
+                        model_name=model_name,
+                        evaluated_at=eval_time,
+                        precision_at_5=eval_result.get('precision_at_k'),
+                        recall_at_5=eval_result.get('recall_at_k'),
+                        ndcg_at_5=eval_result.get('ndcg_at_k'),
+                        mrr=eval_result.get('mrr'),
+                        hit_at_5=eval_result.get('hit_rate'),
+                        map_at_k=eval_result.get('map_at_k'),
+                        f1_score=eval_result.get('f1_score'),
+                        coverage=eval_result.get('coverage'),
+                        n_users_evaluated=eval_result.get('n_users_evaluated'),
+                        ensemble_weight=ensemble_weights.get(model_name),
+                        raw_metrics=eval_result,
+                    )
+                    logger.info(f"Offline eval saved for {model_name}: P@5={eval_result.get('precision_at_k', 0):.4f}")
+                    results[f'{model_name}_eval'] = eval_result
+            except Exception as e:
+                logger.error(f"Offline eval failed for {model_name}: {e}")
+
+        logger.info("Offline evaluation complete and persisted")
+    except Exception as e:
+        logger.error(f"Offline evaluation phase failed: {e}", exc_info=True)
 
     # Invalidate singleton so next request loads fresh model
     try:

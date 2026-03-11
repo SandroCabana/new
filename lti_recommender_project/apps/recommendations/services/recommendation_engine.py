@@ -222,7 +222,8 @@ class RecommendationEngine:
         weights = []
         for interaction in interactions:
             resource = interaction.resource
-            if resource and resource.embedding:
+            # Fix: explicitly check 'is not None' because numpy arrays raise ValueError on truth checks
+            if resource and getattr(resource, 'embedding', None) is not None:
                 emb = resource.embedding
                 if isinstance(emb, list):
                     emb = np.array(emb)
@@ -372,21 +373,17 @@ class RecommendationEngine:
                 if len(combined) >= limit:
                     break
                 if isinstance(item, dict):
-                    # pgvector result
+                    # Direct dict result
                     rid = item.get('id')
                     if rid and rid not in seen_ids:
-                        from lti_recommender_project.apps.resources.models import EducationalResource
-                        try:
-                            r = EducationalResource.objects.get(id=rid)
-                            combined.append((r, item.get('source', 'content'), item.get('score', 0.5)))
-                            seen_ids.add(rid)
-                        except Exception:
-                            pass
+                        combined.append(item)
+                        seen_ids.add(rid)
                 else:
                     r, src, score = item
-                    if r.id not in seen_ids:
+                    rid = r.get('id') if isinstance(r, dict) else r.id
+                    if rid and rid not in seen_ids:
                         combined.append((r, src, score))
-                        seen_ids.add(r.id)
+                        seen_ids.add(rid)
 
         return combined
 
@@ -397,19 +394,37 @@ class RecommendationEngine:
             if isinstance(item, dict):
                 result.append(item)
                 continue
+            
             resource, source, score = item
-            result.append({
-                'id': resource.id,
-                'title': resource.title,
-                'url': resource.url,
-                'description': resource.description or 'Recurso educativo recomendado',
-                'type': resource.resource_type,
-                'author': resource.author or 'Desconocido',
-                'tags': resource.tags or '',
-                'difficulty': resource.difficulty_level or 'N/A',
-                'score': round(float(score), 4),
-                'source': source,
-            })
+            
+            if isinstance(resource, dict):
+                # Es un diccionario de pgvector
+                result.append({
+                    'id': resource.get('id'),
+                    'title': resource.get('title', 'Recurso'),
+                    'url': resource.get('url', '#'),
+                    'description': resource.get('description', 'Recurso educativo recomendado'),
+                    'type': resource.get('resource_type', ''),
+                    'author': resource.get('author', 'Desconocido'),
+                    'tags': resource.get('tags', ''),
+                    'difficulty': resource.get('difficulty_level', 'N/A'),
+                    'score': round(float(score), 4),
+                    'source': source,
+                })
+            else:
+                # Es un objeto modelo de Django
+                result.append({
+                    'id': resource.id,
+                    'title': resource.title,
+                    'url': resource.url,
+                    'description': resource.description or 'Recurso educativo recomendado',
+                    'type': resource.resource_type,
+                    'author': resource.author or 'Desconocido',
+                    'tags': resource.tags or '',
+                    'difficulty': resource.difficulty_level or 'N/A',
+                    'score': round(float(score), 4),
+                    'source': source,
+                })
         return result
 
     def _get_fallback_recommendations(self, context_id: str, limit: int) -> List[Dict[str, Any]]:

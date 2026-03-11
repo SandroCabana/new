@@ -218,10 +218,16 @@ class NeuralCFModel:
     
     def fit(self, save_model: bool = True) -> Dict:
         """
-        Train the NCF model.
+        Train the NCF model with proper evaluation methodology.
+        
+        Improvements over original:
+        1. Train/test split (80/20) for realistic metrics
+        2. Negative sampling for learning what NOT to recommend
+        3. RMSE evaluated on held-out test data
+        4. Final model retrained on all data for production
         
         Returns:
-            Dictionary with training metrics
+            Dictionary with training and evaluation metrics
         """
         logger.info("Starting NCF model training...")
         
@@ -230,6 +236,47 @@ class NeuralCFModel:
         
         n_users = len(self.user_id_map)
         n_items = len(self.item_id_map)
+        
+        # --- Train/Test split (80/20) ---
+        n_total = len(ratings)
+        indices = np.random.permutation(n_total)
+        split_idx = int(n_total * 0.8)
+        train_idx, test_idx = indices[:split_idx], indices[split_idx:]
+        
+        train_users, train_items, train_ratings = user_ids[train_idx], item_ids[train_idx], ratings[train_idx]
+        test_users, test_items, test_ratings = user_ids[test_idx], item_ids[test_idx], ratings[test_idx]
+        
+        logger.info(f"Split: {len(train_idx)} train, {len(test_idx)} test")
+        
+        # --- Negative sampling ---
+        # Build a set of positive interactions per user for fast lookup
+        user_positive_items = {}
+        for u, i in zip(train_users, train_items):
+            user_positive_items.setdefault(int(u), set()).add(int(i))
+        
+        neg_users, neg_items, neg_ratings = [], [], []
+        n_negatives_per_positive = 4
+        
+        for u, i in zip(train_users, train_items):
+            u_int = int(u)
+            positives = user_positive_items.get(u_int, set())
+            sampled = 0
+            attempts = 0
+            while sampled < n_negatives_per_positive and attempts < n_negatives_per_positive * 3:
+                neg_item = np.random.randint(0, n_items)
+                attempts += 1
+                if neg_item not in positives:
+                    neg_users.append(u_int)
+                    neg_items.append(neg_item)
+                    neg_ratings.append(1.0)  # Low rating for negative samples
+                    sampled += 1
+        
+        # Combine positive + negative samples
+        all_train_users = np.concatenate([train_users, np.array(neg_users)])
+        all_train_items = np.concatenate([train_items, np.array(neg_items)])
+        all_train_ratings = np.concatenate([train_ratings, np.array(neg_ratings)])
+        
+        logger.info(f"Negative sampling: {len(neg_users)} negatives added ({n_negatives_per_positive}:1 ratio)")
         
         # Create model
         self.model = NCFModel(
@@ -240,8 +287,8 @@ class NeuralCFModel:
             dropout=self.dropout
         ).to(self.device)
         
-        # Create dataset and dataloader
-        dataset = InteractionDataset(user_ids, item_ids, ratings)
+        # Create dataset and dataloader (with negatives)
+        dataset = InteractionDataset(all_train_users, all_train_items, all_train_ratings)
         dataloader = DataLoader(
             dataset, 
             batch_size=self.batch_size, 
@@ -280,34 +327,90 @@ class NeuralCFModel:
             if (epoch + 1) % 5 == 0:
                 logger.info(f"Epoch {epoch + 1}/{self.n_epochs}, Loss: {avg_loss:.4f}")
         
-        self._is_fitted = True
-        
-        # Calculate final RMSE
+        # --- Evaluate on HELD-OUT test set ---
         self.model.eval()
         with torch.no_grad():
-            all_users = torch.LongTensor(user_ids).to(self.device)
-            all_items = torch.LongTensor(item_ids).to(self.device)
-            all_ratings = torch.FloatTensor(ratings).to(self.device)
+            test_u = torch.LongTensor(test_users).to(self.device)
+            test_i = torch.LongTensor(test_items).to(self.device)
+            test_r = torch.FloatTensor(test_ratings).to(self.device)
             
-            predictions = self.model(all_users, all_items)
-            mse = criterion(predictions, all_ratings)
-            rmse = torch.sqrt(mse).item()
+            test_predictions = self.model(test_u, test_i)
+            test_mse = criterion(test_predictions, test_r)
+            test_rmse = torch.sqrt(test_mse).item()
+        
+        logger.info(f"Test RMSE (held-out): {test_rmse:.4f}")
+        
+        # --- Retrain on ALL data for production ---
+        logger.info("Retraining on full dataset for production...")
+        
+        # Rebuild with all data + negatives for full dataset
+        full_pos_items = {}
+        for u, i in zip(user_ids, item_ids):
+            full_pos_items.setdefault(int(u), set()).add(int(i))
+        
+        full_neg_u, full_neg_i, full_neg_r = [], [], []
+        for u, i in zip(user_ids, item_ids):
+            u_int = int(u)
+            positives = full_pos_items.get(u_int, set())
+            sampled = 0
+            attempts = 0
+            while sampled < n_negatives_per_positive and attempts < n_negatives_per_positive * 3:
+                neg_item = np.random.randint(0, n_items)
+                attempts += 1
+                if neg_item not in positives:
+                    full_neg_u.append(u_int)
+                    full_neg_i.append(neg_item)
+                    full_neg_r.append(1.0)
+                    sampled += 1
+        
+        full_users = np.concatenate([user_ids, np.array(full_neg_u)])
+        full_items = np.concatenate([item_ids, np.array(full_neg_i)])
+        full_ratings = np.concatenate([ratings, np.array(full_neg_r)])
+        
+        self.model = NCFModel(
+            n_users=n_users,
+            n_items=n_items,
+            embedding_dim=self.embedding_dim,
+            mlp_layers=self.mlp_layers,
+            dropout=self.dropout
+        ).to(self.device)
+        
+        full_dataset = InteractionDataset(full_users, full_items, full_ratings)
+        full_loader = DataLoader(full_dataset, batch_size=self.batch_size, shuffle=True, num_workers=0)
+        optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
+        
+        for epoch in range(self.n_epochs):
+            self.model.train()
+            for user_batch, item_batch, rating_batch in full_loader:
+                user_batch = user_batch.to(self.device)
+                item_batch = item_batch.to(self.device)
+                rating_batch = rating_batch.to(self.device)
+                optimizer.zero_grad()
+                predictions = self.model(user_batch, item_batch)
+                loss = criterion(predictions, rating_batch)
+                loss.backward()
+                optimizer.step()
+        
+        self._is_fitted = True
         
         # Save model
         if save_model:
             self.save()
         
         metrics = {
-            'final_loss': epoch_losses[-1],
-            'rmse': rmse,
+            'test_rmse': test_rmse,
+            'train_loss': epoch_losses[-1],
             'n_users': n_users,
             'n_items': n_items,
-            'n_interactions': len(ratings),
+            'n_interactions': n_total,
+            'n_train': len(train_idx),
+            'n_test': len(test_idx),
+            'n_negatives': len(neg_users),
             'n_epochs': self.n_epochs,
             'device': str(self.device),
         }
         
-        logger.info(f"Training complete. RMSE: {rmse:.4f}")
+        logger.info(f"Training complete. Test RMSE: {test_rmse:.4f}")
         return metrics
     
     def predict(self, user_id: str, resource_id: int) -> float:

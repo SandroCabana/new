@@ -6,23 +6,25 @@
 | Servicio | Estado | Puerto externo |
 |---|---|---|
 | **web** (Gunicorn/Django) | ✅ healthy | interno :8000 |
-| **nginx** | ✅ healthy | **:8080** → /admin, /api, /lti |
+| **nginx** | ✅ healthy | **:8080** → /admin, /api, /lti, /analytics |
 | **db** (PostgreSQL + pgvector) | ✅ healthy | :5432 |
 | **redis** | ✅ healthy | :6379 |
-| **celery_worker** | ⚠️ unhealthy (funciona) | - |
-| **celery_beat** | ⚠️ unhealthy (funciona) | - |
+| **celery_worker** | ✅ healthy | - |
+| **celery_beat** | ✅ healthy | - |
 | **LTI 1.3 Integration** | ✅ Configurado | Moodle ↔ Django OK |
 
-**URL de acceso:** `http://localhost:8080/admin/`  
-**LTI Launch URL:** `http://localhost:8080/lti/launch/`  
+**URLs de acceso (vía Nginx):**  
+- **Admin Django:** `http://localhost:8080/admin/`  
+- **Visual Dashboard ML:** `http://localhost:8080/analytics/dashboard/visual/`
+- **LTI Launch URL:** `http://localhost:8080/lti/launch/`  
 **Usuario admin:** `admin` (credenciales en `.env` → `DJANGO_SUPERUSER_*`)
 
 ### Estado de datos
 | Dato | Cantidad |
 |---|---|
-| Recursos educativos en BD | **233** (arXiv: cs.AI, cs.LG, cs.CV, cs.CL, cs.SE) |
-| Recursos con embedding generado | **233/233** ✅ completo |
-| Interacciones de usuario | ✅ Capturando vía LTI / API |
+| Recursos educativos en BD | **940** (233 arXiv Articles + 707 Kaggle Videos) |
+| Recursos con embedding | **100%** ✅ |
+| Datos de interacción | **✅ Importados** de Kaggle e-learning dataset |
 
 ---
 
@@ -201,12 +203,14 @@ docker compose up -d --force-recreate web celery_worker celery_beat
 
 | Issue | Severidad | Descripción |
 |---|---|---|
-| `celery_worker` / `nginx` unhealthy | Baja | Health checks mal configurados, servicios funcionales |
-| Modelo SVD falla | Media | Falta instalar `scikit-surprise` en requirements.txt |
-| `SequentialRecommendationModel` import roto | Media | Clase no exportada correctamente en `sequential_rec.py` |
-| Sin datos de interacción | Media | NCF y modelos colaborativos requieren usuarios LTI reales |
-| LTI no configurado | Alta | Requiere registrar la herramienta en Moodle real y configurar `.env` |
-| `scrapy-user-agents` no instalado | Baja | Middleware comentado; añadido a requirements.txt para próximo rebuild |
+| LTI no configurado en prod | Alta | Requiere registrar la herramienta en Moodle de producción y configurar `.env` (Actualmente en localhost OK) |
+| `scrapy-user-agents` | Baja | Middleware comentado; añadido a requirements.txt para próximo rebuild |
+
+**Issues Resueltos Recientemente (Marzo 2026):**
+- ✅ `scikit-surprise` agregado (Modelo SVD funcional)
+- ✅ Importación y retención de test sets de `SequentialRecommendationModel`
+- ✅ Importados datos de interacciones del Kaggle e-learning dataset (Colaborativos funcionales)
+- ✅ Dashboard Visual Analítico en `/analytics/dashboard/visual/` para testear reentrenamientos.
 
 ---
 

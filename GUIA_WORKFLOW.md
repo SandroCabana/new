@@ -189,14 +189,26 @@ print('Task ID:', result.id)
 docker compose logs -f celery_worker | grep -E "retrain|SVD|NCF|Sequential|error"
 ```
 
-### Estado esperado (sin interacciones de usuario)
+### Estado esperado
+Después del entrenamiento, el sistema ejecuta **Automáticamente un "Evaluador Offline"**:
+1. Extrae un `test_set` (holdout de las últimas interacciones de los usuarios).
+2. Evalúa métricas complejas (Precision@5, NDCG@5, HitRate@10).
+3. Ajusta los pesos dinámicos del modelo **Ensemble / Híbrido** según quien tuvo mejor desempeño.
+4. Guarda los resultados en la BD (`analytics_modelevaluationresult`).
+
 ```
-SVD:        ERROR — No module named 'surprise'  (pendiente: instalar scikit-surprise)
-NCF:        ERROR — No interaction data available  (normal sin usuarios LTI)
-Sequential: ERROR — ImportError SequentialRecommendationModel  (pendiente: fix import)
+# Logs esperados en celery_worker
+[INFO] matrix_factorization Training complete. RMSE: 1.0105
+[INFO] evaluate_models Evaluating ensemble...
+[INFO] tasks Offline eval saved for ensemble: P@5=0...
+[INFO] ensemble Auto-adjusted weights: {'svd': 0.33, 'ncf': 0.21, ...}
 ```
 
-**Nota:** El motor de recomendaciones usa el ensemble híbrido. Aunque estos modelos fallen, las recomendaciones por **similaridad semántica** (embeddings) funcionan correctamente.
+### 🔴 Ver métricas (Dashboard Visual)
+Para ver los resultados históricos del modelo y sus tendencias:
+👉 Ir a: **http://localhost:8080/analytics/dashboard/visual/**
+
+**Nota:** El motor de recomendaciones usa el ensemble híbrido. Aunque algunos modelos colaborativos fallen inicialmente (por falta de interacciones en cold-start), las recomendaciones por **similaridad semántica** (embeddings) seguirán funcionando correctamente.
 
 ---
 

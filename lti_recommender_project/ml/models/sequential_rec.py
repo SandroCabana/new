@@ -223,11 +223,18 @@ class SequentialRecommender:
     
     def fit(self, save_model: bool = True) -> Dict:
         """
-        Train the sequential recommender.
+        Train the sequential recommender with proper evaluation.
+        
+        Uses last-item holdout: for each user, the last interaction is
+        held out for evaluation, and the model trains on the rest.
+        After evaluation, retrains on the full dataset for production.
+        
+        Returns:
+            Dictionary with training and evaluation metrics
         """
         logger.info("Starting Sequential Recommender training...")
         
-        # Build sequences
+        # Build all sequences
         sequences, targets = self._build_sequences()
         
         if len(sequences) < 5:
@@ -236,7 +243,17 @@ class SequentialRecommender:
         
         n_items = len(self.item_id_map)
         
-        # Create model
+        # --- Last-item holdout split ---
+        # Use last 20% of sequences as test (preserves temporal order)
+        n_total = len(sequences)
+        split_idx = int(n_total * 0.8)
+        
+        train_seqs, train_targets = sequences[:split_idx], targets[:split_idx]
+        test_seqs, test_targets = sequences[split_idx:], targets[split_idx:]
+        
+        logger.info(f"Split: {len(train_seqs)} train, {len(test_seqs)} test sequences")
+        
+        # --- Train on training set ---
         self.model = GRU4Rec(
             n_items=n_items,
             embedding_dim=self.embedding_dim,
@@ -245,28 +262,25 @@ class SequentialRecommender:
             dropout=self.dropout
         ).to(self.device)
         
-        # Create dataset
-        dataset = SequenceDataset(sequences, targets)
-        dataloader = DataLoader(
-            dataset,
-            batch_size=min(self.batch_size, len(sequences)),
+        train_dataset = SequenceDataset(train_seqs, train_targets)
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=min(self.batch_size, len(train_seqs)),
             shuffle=True,
             collate_fn=collate_sequences,
             num_workers=0
         )
         
-        # Loss and optimizer
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
         
-        # Training
         epoch_losses = []
         for epoch in range(self.n_epochs):
             self.model.train()
             total_loss = 0
             n_batches = 0
             
-            for seqs, lengths, targets_batch in dataloader:
+            for seqs, lengths, targets_batch in train_loader:
                 seqs = seqs.to(self.device)
                 lengths = lengths.to(self.device)
                 targets_batch = targets_batch.to(self.device)
@@ -286,15 +300,22 @@ class SequentialRecommender:
             if (epoch + 1) % 10 == 0:
                 logger.info(f"Epoch {epoch + 1}/{self.n_epochs}, Loss: {avg_loss:.4f}")
         
-        self._is_fitted = True
-        
-        # Calculate hit rate on training data
+        # --- Evaluate on HELD-OUT test set ---
         self.model.eval()
+        test_dataset = SequenceDataset(test_seqs, test_targets)
+        test_loader = DataLoader(
+            test_dataset,
+            batch_size=min(self.batch_size, len(test_seqs)),
+            shuffle=False,
+            collate_fn=collate_sequences,
+            num_workers=0
+        )
+        
         hits = 0
         total = 0
         
         with torch.no_grad():
-            for seqs, lengths, targets_batch in dataloader:
+            for seqs, lengths, targets_batch in test_loader:
                 seqs = seqs.to(self.device)
                 lengths = lengths.to(self.device)
                 
@@ -306,7 +327,44 @@ class SequentialRecommender:
                         hits += 1
                     total += 1
         
-        hit_rate = hits / total if total > 0 else 0
+        test_hit_rate = hits / total if total > 0 else 0
+        logger.info(f"Test Hit Rate@10 (held-out): {test_hit_rate:.4f}")
+        
+        # --- Retrain on ALL data for production ---
+        logger.info("Retraining on full dataset for production...")
+        
+        self.model = GRU4Rec(
+            n_items=n_items,
+            embedding_dim=self.embedding_dim,
+            hidden_dim=self.hidden_dim,
+            n_layers=self.n_layers,
+            dropout=self.dropout
+        ).to(self.device)
+        
+        full_dataset = SequenceDataset(sequences, targets)
+        full_loader = DataLoader(
+            full_dataset,
+            batch_size=min(self.batch_size, len(sequences)),
+            shuffle=True,
+            collate_fn=collate_sequences,
+            num_workers=0
+        )
+        
+        optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
+        
+        for epoch in range(self.n_epochs):
+            self.model.train()
+            for seqs, lengths, targets_batch in full_loader:
+                seqs = seqs.to(self.device)
+                lengths = lengths.to(self.device)
+                targets_batch = targets_batch.to(self.device)
+                optimizer.zero_grad()
+                logits = self.model(seqs, lengths)
+                loss = criterion(logits, targets_batch)
+                loss.backward()
+                optimizer.step()
+        
+        self._is_fitted = True
         
         # Save model
         if save_model:
@@ -314,14 +372,16 @@ class SequentialRecommender:
         
         metrics = {
             'final_loss': epoch_losses[-1],
-            'hit_rate_at_10': hit_rate,
+            'test_hit_rate_at_10': test_hit_rate,
             'n_items': n_items,
-            'n_sequences': len(sequences),
+            'n_sequences': n_total,
+            'n_train': len(train_seqs),
+            'n_test': len(test_seqs),
             'n_epochs': self.n_epochs,
             'device': str(self.device),
         }
         
-        logger.info(f"Training complete. Hit Rate@10: {hit_rate:.4f}")
+        logger.info(f"Training complete. Test Hit Rate@10: {test_hit_rate:.4f}")
         return metrics
     
     def get_recommendations(

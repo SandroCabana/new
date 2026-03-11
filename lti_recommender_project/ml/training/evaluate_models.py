@@ -41,7 +41,7 @@ class ModelEvaluator:
     Evaluates recommendation models with comprehensive metrics.
     """
     
-    def __init__(self, k: int = 5, test_ratio: float = 0.2, min_interactions: int = 5):
+    def __init__(self, k: int = 5, test_ratio: float = 0.2, min_interactions: int = 5, max_users: int = 100):
         """
         Initialize evaluator.
         
@@ -49,10 +49,12 @@ class ModelEvaluator:
             k: Number of recommendations to evaluate
             test_ratio: Ratio of interactions to use for testing
             min_interactions: Minimum interactions per user for evaluation
+            max_users: Maximum number of users to evaluate (to prevent excessive resource usage)
         """
         self.k = k
         self.test_ratio = test_ratio
         self.min_interactions = min_interactions
+        self.max_users = max_users
     
     def evaluate_model(
         self, 
@@ -75,7 +77,7 @@ class ModelEvaluator:
         # Get users with enough interactions
         users = list(UserInteraction.objects.values('lti_user_id').annotate(
             count=Count('id')
-        ).filter(count__gte=self.min_interactions).values_list('lti_user_id', flat=True))
+        ).filter(count__gte=self.min_interactions).order_by('?')[:self.max_users].values_list('lti_user_id', flat=True))
         
         if not users:
             logger.warning(f"No users with {self.min_interactions}+ interactions")

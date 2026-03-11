@@ -298,6 +298,58 @@ class EnsembleRecommender:
             if model_name in weights:
                 self.models[model_name]['weight'] = weights[model_name]
     
+    def auto_adjust_weights(self, training_results: Dict[str, Dict]):
+        """
+        Automatically adjust model weights based on training metrics.
+        
+        Strategy:
+        - Models that failed get weight 0
+        - For RMSE-based models (svd, ncf): lower RMSE → higher weight
+        - For Hit@K-based models (sequential): higher hit rate → higher weight
+        - Hybrid (content-based) gets a fixed base weight as fallback
+        
+        Args:
+            training_results: Dict from retrain_all_models with model metrics
+        """
+        new_weights = {}
+        scores = {}
+        
+        for model_name, result in training_results.items():
+            if result.get('status') != 'ok':
+                new_weights[model_name] = 0.0
+                logger.info(f"Weight for {model_name}: 0.0 (failed)")
+                continue
+            
+            metrics = result.get('metrics', {})
+            
+            # Convert metrics to a 0-1 quality score
+            if 'rmse_mean' in metrics:
+                # SVD: RMSE typically 0.5-2.0, lower is better
+                rmse = metrics['rmse_mean']
+                scores[model_name] = max(0, 1.0 - (rmse / 5.0))
+            elif 'test_rmse' in metrics:
+                # NCF: same scale
+                rmse = metrics['test_rmse']
+                scores[model_name] = max(0, 1.0 - (rmse / 5.0))
+            elif 'test_hit_rate_at_10' in metrics:
+                # Sequential: 0-1, higher is better
+                scores[model_name] = metrics['test_hit_rate_at_10']
+            else:
+                scores[model_name] = 0.3  # Default modest weight
+        
+        # Normalize scores to sum to 0.75 (leave 0.25 for hybrid)
+        total_score = sum(scores.values())
+        if total_score > 0:
+            for model_name, score in scores.items():
+                new_weights[model_name] = (score / total_score) * 0.75
+        
+        # Hybrid always gets a base weight (it works without interactions)
+        new_weights['hybrid'] = 0.25
+        
+        self.set_weights(new_weights)
+        logger.info(f"Auto-adjusted weights: {new_weights}")
+        return new_weights
+    
     def get_model_info(self) -> Dict:
         """Get information about loaded models."""
         self._load_models()

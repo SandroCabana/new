@@ -9,6 +9,7 @@ app_name = 'analytics'
 urlpatterns = [
     # Dashboard overview
     path('dashboard/', views.dashboard_overview, name='dashboard'),
+    path('dashboard/visual/', views.visual_dashboard, name='visual_dashboard'),
     
     # Trends over time
     path('trends/', views.interaction_trends, name='trends'),

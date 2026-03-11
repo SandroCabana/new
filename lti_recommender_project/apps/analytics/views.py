@@ -12,6 +12,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
+from django.shortcuts import render
 
 from lti_recommender_project.apps.resources.models import EducationalResource
 from lti_recommender_project.apps.interactions.models import UserInteraction
@@ -380,3 +381,74 @@ def context_analytics(request, context_id=None):
     except Exception as e:
         logger.error(f"Error in context_analytics: {e}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def visual_dashboard(request):
+    """
+    Renders an HTML dashboard visualizing model performance over time.
+    """
+    from .models import ModelEvaluationResult
+    import json
+
+    # Get latest evaluation per model
+    latest_results = {}
+    models = ['svd', 'ncf', 'sequential', 'ensemble']
+    for model in models:
+        latest = ModelEvaluationResult.objects.filter(model_name=model).order_by('-evaluated_at').first()
+        if latest:
+            latest_results[model] = latest
+    
+    # Get history for charts (last 30 evaluations per model, but chronologically for chart)
+    history_data = {
+        'labels': [],
+        'svd_rmse': [],
+        'ncf_rmse': [],
+        'seq_hit': [],
+    }
+    
+    # Try to unify timestamps (simplified: just take ordering of the last 15 runs)
+    recent_evals = ModelEvaluationResult.objects.filter(model_name='svd').order_by('-evaluated_at')[:15]
+    recent_evals = reversed(list(recent_evals)) # oldest to newest
+    
+    for eval in recent_evals:
+        # Find corresponding evals for others roughly at same time
+        time_lower = eval.evaluated_at - timedelta(minutes=10)
+        time_upper = eval.evaluated_at + timedelta(minutes=10)
+        
+        ncf_eval = ModelEvaluationResult.objects.filter(model_name='ncf', evaluated_at__range=(time_lower, time_upper)).first()
+        seq_eval = ModelEvaluationResult.objects.filter(model_name='sequential', evaluated_at__range=(time_lower, time_upper)).first()
+        
+        history_data['labels'].append(eval.evaluated_at.strftime('%m-%d %H:%M'))
+        history_data['svd_rmse'].append(eval.test_rmse or eval.train_rmse or 0)
+        history_data['ncf_rmse'].append(ncf_eval.test_rmse if ncf_eval else 0)
+        history_data['seq_hit'].append((seq_eval.test_hit_rate_at_10 * 100) if seq_eval and seq_eval.test_hit_rate_at_10 else 0)
+
+    # Convert to JSON for JS
+    history_json = json.dumps(history_data)
+
+    # Current ensemble weights (from the latest run)
+    weights = {'svd': 0, 'ncf': 0, 'sequential': 0, 'hybrid': 25}
+    if 'ensemble' in latest_results and latest_results['ensemble']:
+        # if ensemble evaluation has some weights logged, try to get them, 
+        # but realistically weights are scattered across individual model logs
+        pass
+        
+    last_svd = latest_results.get('svd')
+    if last_svd and last_svd.ensemble_weight:
+        weights['svd'] = last_svd.ensemble_weight * 100
+        
+    last_ncf = latest_results.get('ncf')
+    if last_ncf and last_ncf.ensemble_weight:
+        weights['ncf'] = last_ncf.ensemble_weight * 100
+        
+    last_seq = latest_results.get('sequential')
+    if last_seq and last_seq.ensemble_weight:
+        weights['sequential'] = last_seq.ensemble_weight * 100
+
+    context = {
+        'latest_results': latest_results,
+        'history_json': history_json,
+        'weights_json': json.dumps(weights),
+    }
+
+    return render(request, 'analytics/dashboard.html', context)
