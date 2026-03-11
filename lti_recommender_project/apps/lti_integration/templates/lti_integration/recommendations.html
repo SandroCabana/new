@@ -195,11 +195,12 @@
                     <!-- Confidence Badge -->
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-lg font-semibold text-primary-dark flex-1 mr-2">{{ rec.title }}</h3>
-                        {% if rec.score >= 70 %}
+                        {% with perc=rec.score|percentage %}
+                        {% if perc >= 70 %}
                         <span class="confidence-badge bg-green-100 text-green-800 border-green-300">
                             🟢 Alta
                         </span>
-                        {% elif rec.score >= 40 %}
+                        {% elif perc >= 40 %}
                         <span class="confidence-badge bg-yellow-100 text-yellow-800 border-yellow-300">
                             🟡 Media
                         </span>
@@ -214,21 +215,22 @@
                     <div class="mb-3">
                         <div class="flex items-center justify-between text-xs text-gray-600 mb-1">
                             <span class="font-medium">Confianza</span>
-                            <span class="font-semibold">{{ rec.score|floatformat:0 }}%</span>
+                            <span class="font-semibold">{{ perc }}%</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                            {% if rec.score >= 70 %}
+                            {% if perc >= 70 %}
                             <div class="bg-green-500 h-2 rounded-full transition-all duration-500"
-                                style="width: {{ rec.score|floatformat:0 }}%"></div>
-                            {% elif rec.score >= 40 %}
+                                style="width: {{ perc }}%"></div>
+                            {% elif perc >= 40 %}
                             <div class="bg-yellow-500 h-2 rounded-full transition-all duration-500"
-                                style="width: {{ rec.score|floatformat:0 }}%"></div>
+                                style="width: {{ perc }}%"></div>
                             {% else %}
                             <div class="bg-orange-500 h-2 rounded-full transition-all duration-500"
-                                style="width: {{ rec.score|floatformat:0 }}%"></div>
+                                style="width: {{ perc }}%"></div>
                             {% endif %}
                         </div>
                     </div>
+                    {% endwith %}
 
                     <!-- Resource Metadata -->
                     <div class="flex items-center gap-2 mb-3 flex-wrap">

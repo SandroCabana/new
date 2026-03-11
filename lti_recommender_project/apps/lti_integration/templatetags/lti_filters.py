@@ -65,3 +65,15 @@ def prettify_role(role_url):
     """
     label = extract_role_label(role_url)
     return ROLE_LABELS.get(label, label)
+
+
+@register.filter(name='percentage')
+def percentage(value):
+    """
+    Convierte un valor decimal (0.0 a 1.0) a formato porcentaje entero (0 a 100).
+    Evita que Django redondee 0.65 a '1'.
+    """
+    try:
+        return int(round(float(value) * 100))
+    except (ValueError, TypeError):
+        return 0

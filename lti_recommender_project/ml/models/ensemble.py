@@ -162,8 +162,11 @@ class EnsembleRecommender:
                     
                     score = rec.get('score', 0)
                     
-                    # Normalize score to 0-1 range (assuming 1-5 scale)
-                    normalized_score = (score - 1) / 4 if isinstance(score, (int, float)) else 0.5
+                    # Convert to 0.0-1.0 range dynamically based on source score format
+                    if isinstance(score, (int, float)):
+                        normalized_score = max(0.0, float(score)) if score <= 1.0 else max(0.0, min(1.0, (score - 1) / 4))
+                    else:
+                        normalized_score = 0.5
                     
                     item_scores[item_id]['weighted_score'] += weight * normalized_score
                     item_scores[item_id]['total_weight'] += weight
@@ -180,11 +183,8 @@ class EnsembleRecommender:
         for item_id, data in item_scores.items():
             if data['total_weight'] > 0:
                 final_score = data['weighted_score'] / data['total_weight']
-                # Convert back to 1-5 scale
-                rating_score = 1 + final_score * 4
-                
                 rec = data['resource'].copy()
-                rec['score'] = rating_score
+                rec['score'] = final_score
                 rec['ensemble_weight'] = data['total_weight']
                 rec['source'] = 'ensemble'
                 final_recommendations.append(rec)
@@ -230,9 +230,12 @@ class EnsembleRecommender:
         
         # Build final list
         final_recommendations = []
+        max_rrf = max((d['rrf_score'] for d in item_rrf_scores.values()), default=1.0)
+        if max_rrf == 0: max_rrf = 1.0
+        
         for item_id, data in item_rrf_scores.items():
             rec = data['resource'].copy()
-            rec['score'] = data['rrf_score'] * 100  # Scale for visibility
+            rec['score'] = data['rrf_score'] / max_rrf
             rec['source'] = 'ensemble_rrf'
             final_recommendations.append(rec)
         
@@ -281,9 +284,11 @@ class EnsembleRecommender:
         )
         
         final_recommendations = []
+        max_votes = max((d['votes'] for d in item_votes.values()), default=1)
+        
         for item_id, data in sorted_items[:limit]:
             rec = data['resource'].copy()
-            rec['score'] = data['votes']
+            rec['score'] = data['votes'] / max_votes
             rec['avg_rank'] = data['avg_rank']
             rec['source'] = 'ensemble_voting'
             final_recommendations.append(rec)

@@ -385,17 +385,32 @@ class RecommendationEngine:
                         combined.append((r, src, score))
                         seen_ids.add(rid)
 
-        return combined
-
     def _format_recommendations(self, resources: List[tuple]) -> List[Dict[str, Any]]:
-        """Formatea recursos al formato de respuesta estándar."""
+        """Formatea recursos al formato de respuesta estándar y normaliza scores de 0 a 1."""
         result = []
+        
+        # Encontrar el score máximo para normalizar si alguno supera 1.0
+        max_score = 1.0
         for item in resources:
             if isinstance(item, dict):
+                score = float(item.get('score', 0))
+            else:
+                score = float(item[2])
+            if score > max_score:
+                max_score = score
+                
+        for item in resources:
+            if isinstance(item, dict):
+                # Es un diccionario que ya vino directo
+                raw_score = float(item.get('score', 0))
+                normalized_score = raw_score / max_score if max_score > 0 else 0
+                item['score'] = round(normalized_score, 4)
                 result.append(item)
                 continue
             
             resource, source, score = item
+            raw_score = float(score)
+            normalized_score = raw_score / max_score if max_score > 0 else 0
             
             if isinstance(resource, dict):
                 # Es un diccionario de pgvector
@@ -408,7 +423,7 @@ class RecommendationEngine:
                     'author': resource.get('author', 'Desconocido'),
                     'tags': resource.get('tags', ''),
                     'difficulty': resource.get('difficulty_level', 'N/A'),
-                    'score': round(float(score), 4),
+                    'score': round(normalized_score, 4),
                     'source': source,
                 })
             else:
@@ -422,7 +437,7 @@ class RecommendationEngine:
                     'author': resource.author or 'Desconocido',
                     'tags': resource.tags or '',
                     'difficulty': resource.difficulty_level or 'N/A',
-                    'score': round(float(score), 4),
+                    'score': round(normalized_score, 4),
                     'source': source,
                 })
         return result
