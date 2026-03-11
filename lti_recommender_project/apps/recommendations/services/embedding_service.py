@@ -1,286 +1,328 @@
 """
-Servicio de Embeddings Semánticos
-Usa Sentence Transformers para generar y gestionar embeddings de recursos educativos.
+Servicio de Embeddings Semánticos — v2
+- Modelo multilingual: paraphrase-multilingual-mpnet-base-v2 (768 dims)
+- Batch encoding para eficiencia (~10x más rápido que individual)
+- Actualización incremental (solo recursos nuevos/modificados)
+- Búsqueda vectorial nativa con pgvector CosineDistance (O(log n) con HNSW)
 """
 
 import logging
 import numpy as np
 from typing import List, Dict, Optional, Tuple
 from django.conf import settings
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+
+# Flag to detect if pgvector is available
+try:
+    from pgvector.django import CosineDistance
+    PGVECTOR_AVAILABLE = True
+except ImportError:
+    PGVECTOR_AVAILABLE = False
+    CosineDistance = None
+    logger.warning("pgvector not installed — falling back to in-memory cosine similarity")
 
 
 class EmbeddingService:
     """
-    Servicio para generar embeddings semánticos de recursos educativos
-    usando el modelo all-MiniLM-L6-v2 (384 dimensiones).
-    """
+    Servicio de embeddings para recursos educativos.
     
+    Modelo: paraphrase-multilingual-mpnet-base-v2
+    - 768 dimensiones
+    - Soporte para 50+ idiomas incluyendo español
+    - Fine-tuned para paraphrase/similitud semántica
+    
+    Referente: Coursera usa modelos multilingüe para catálogos globales.
+    """
+
     def __init__(self):
-        """Inicializa el servicio y carga el modelo de embeddings."""
         self.model_name = getattr(
-            settings, 
-            'EMBEDDING_MODEL', 
-            'sentence-transformers/all-MiniLM-L6-v2'
+            settings,
+            'EMBEDDING_MODEL',
+            'paraphrase-multilingual-mpnet-base-v2'
         )
+        self.embedding_dim = getattr(
+            settings,
+            'RECOMMENDATION_CONFIG',
+            {}
+        ).get('EMBEDDING_DIMENSION', 768)
         self.model = None
         self._load_model()
-    
+
     def _load_model(self):
-        """Carga el modelo de Sentence Transformers de forma lazy."""
-        if self.model is None:
-            try:
-                from sentence_transformers import SentenceTransformer
-                logger.info(f"Cargando modelo de embeddings: {self.model_name}")
-                self.model = SentenceTransformer(self.model_name)
-                logger.info("Modelo cargado exitosamente")
-            except ImportError:
-                logger.error(
-                    "sentence-transformers no está instalado. "
-                    "Ejecuta: pip install sentence-transformers"
-                )
-                raise
-            except Exception as e:
-                logger.error(f"Error al cargar el modelo de embeddings: {e}")
-                raise
-    
-    def generate_embedding(self, text: str) -> List[float]:
-        """
-        Genera un embedding para un texto dado.
-        
-        Args:
-            text: Texto para generar embedding
-            
-        Returns:
-            Lista de floats representando el vector de embedding
-        """
-        if not text or not text.strip():
-            logger.warning("Texto vacío recibido para embedding")
-            return []
-        
+        """Carga el modelo de Sentence Transformers."""
+        if self.model is not None:
+            return
         try:
-            embedding = self.model.encode(text, convert_to_numpy=True)
+            from sentence_transformers import SentenceTransformer
+            logger.info(f"Cargando modelo multilingual: {self.model_name}")
+            self.model = SentenceTransformer(self.model_name)
+            logger.info(f"Modelo cargado — dim: {self.embedding_dim}")
+        except ImportError:
+            logger.error("sentence-transformers no está instalado.")
+            raise
+        except Exception as e:
+            logger.error(f"Error al cargar el modelo: {e}")
+            raise
+
+    def generate_embedding(self, text: str) -> List[float]:
+        """Genera un embedding para un texto dado."""
+        if not text or not text.strip():
+            return []
+        try:
+            embedding = self.model.encode(text, convert_to_numpy=True, normalize_embeddings=True)
             return embedding.tolist()
         except Exception as e:
             logger.error(f"Error al generar embedding: {e}")
             return []
-    
-    def update_resource_embeddings(self, force_update: bool = False):
+
+    def generate_embeddings_batch(self, texts: List[str]) -> List[List[float]]:
         """
-        Actualiza los embeddings de todos los recursos en la base de datos.
+        Genera embeddings en batch — ~10x más rápido que individual.
+        Los textos vacíos retornan listas vacías.
+        """
+        if not texts:
+            return []
+        try:
+            embeddings = self.model.encode(
+                texts,
+                batch_size=32,
+                show_progress_bar=False,
+                convert_to_numpy=True,
+                normalize_embeddings=True,
+            )
+            return [e.tolist() for e in embeddings]
+        except Exception as e:
+            logger.error(f"Error en batch encoding: {e}")
+            return [[] for _ in texts]
+
+    def update_embeddings_incremental(self, batch_size: int = 32) -> Tuple[int, int]:
+        """
+        Actualización INCREMENTAL: solo procesa recursos sin embedding
+        o cuyo updated_at > embedding_updated_at.
         
-        Args:
-            force_update: Si es True, regenera embeddings incluso si ya existen
-            
-        Returns:
-            Tuple de (recursos_actualizados, recursos_fallidos)
+        Mucho más eficiente que re-generar todos los embeddings.
         """
         from lti_recommender_project.apps.resources.models import EducationalResource
-        
-        updated_count = 0
-        failed_count = 0
-        
-        # Filtrar recursos que necesitan embeddings
-        if force_update:
-            resources = EducationalResource.objects.all()
-        else:
-            resources = EducationalResource.objects.filter(embedding__isnull=True)
-        
-        total = resources.count()
-        logger.info(f"Procesando {total} recursos para generar embeddings...")
-        
-        for idx, resource in enumerate(resources, 1):
-            try:
-                # Obtener texto combinado del recurso
-                text = resource.get_embedding_text()
-                
-                # Generar embedding
-                embedding = self.generate_embedding(text)
-                
-                if embedding:
-                    # Guardar embedding en el recurso
-                    resource.embedding = embedding
-                    resource.embedding_model_version = self.model_name
-                    resource.save(update_fields=['embedding', 'embedding_model_version'])
-                    updated_count += 1
-                    
-                    if idx % 10 == 0:
-                        logger.info(f"Progreso: {idx}/{total} recursos procesados")
-                else:
-                    logger.warning(f"No se pudo generar embedding para recurso {resource.id}")
-                    failed_count += 1
-                    
-            except Exception as e:
-                logger.error(f"Error procesando recurso {resource.id}: {e}")
-                failed_count += 1
-        
-        logger.info(
-            f"Actualización completada. "
-            f"Actualizados: {updated_count}, Fallidos: {failed_count}"
+        import django.db.models as db_models
+
+        # Solo recursos que necesitan (re)generación
+        needs_update = EducationalResource.objects.filter(
+            db_models.Q(embedding__isnull=True) |
+            db_models.Q(embedding_updated_at__isnull=True) |
+            db_models.Q(updated_at__gt=db_models.F('embedding_updated_at'))
         )
-        return updated_count, failed_count
-    
-    def get_similar_resources(
-        self, 
-        resource_id: int, 
-        limit: int = 5,
-        min_similarity: float = 0.3
+
+        total = needs_update.count()
+        logger.info(f"Embeddings a actualizar: {total} recursos")
+        updated, failed = 0, 0
+
+        # ⚠️ CRÍTICO: recoger IDs PRIMERO antes de actualizar.
+        # Si iteramos con offset sobre el queryset vivo, los registros
+        # actualizados salen del filtro → offset se desplaza → se saltan recursos.
+        resource_ids = list(needs_update.values_list('id', flat=True))
+
+        for i in range(0, len(resource_ids), batch_size):
+            batch_ids = resource_ids[i:i + batch_size]
+            batch = list(EducationalResource.objects.filter(id__in=batch_ids))
+            texts = [r.get_embedding_text() for r in batch]
+
+            try:
+                embeddings = self.generate_embeddings_batch(texts)
+
+                for resource, emb in zip(batch, embeddings):
+                    if emb:
+                        resource.embedding = emb
+                        resource.embedding_model_version = self.model_name
+                        resource.embedding_updated_at = timezone.now()
+
+                EducationalResource.objects.bulk_update(
+                    [r for r, e in zip(batch, embeddings) if e],
+                    ['embedding', 'embedding_model_version', 'embedding_updated_at'],
+                    batch_size=batch_size,
+                )
+                successful = sum(1 for e in embeddings if e)
+                updated += successful
+                failed += len(batch) - successful
+
+                logger.info(f"Batch {i}–{i + batch_size}: {successful}/{len(batch)} OK")
+
+            except Exception as e:
+                logger.error(f"Error en batch {i}: {e}")
+                failed += len(batch)
+
+        logger.info(f"Embeddings: {updated} actualizados, {failed} fallidos")
+        return updated, failed
+
+    def update_resource_embeddings(self, force_update: bool = False) -> Tuple[int, int]:
+        """
+        Compatibilidad con código anterior.
+        force_update=True re-genera todos los embeddings.
+        """
+        if force_update:
+            from lti_recommender_project.apps.resources.models import EducationalResource
+            EducationalResource.objects.all().update(embedding=None, embedding_updated_at=None)
+        return self.update_embeddings_incremental()
+
+    def get_similar_resources_pgvector(
+        self,
+        query_embedding: List[float],
+        limit: int = 10,
+        context_id: Optional[str] = None,
+        exclude_ids: Optional[set] = None,
+        min_similarity: float = 0.3,
     ) -> List[Dict]:
         """
-        Encuentra recursos similares basándose en similitud de embeddings.
-        
-        Args:
-            resource_id: ID del recurso de referencia
-            limit: Número máximo de recursos similares a retornar
-            min_similarity: Umbral mínimo de similitud (0-1)
-            
-        Returns:
-            Lista de diccionarios con recursos similares y sus scores
+        Búsqueda vectorial nativa con pgvector — O(log n) con HNSW.
+        Mucho más rápido que calcular coseno en Python (O(n)).
         """
         from lti_recommender_project.apps.resources.models import EducationalResource
-        
+        from django.db.models import Q
+
+        if not PGVECTOR_AVAILABLE:
+            logger.warning("pgvector no disponible — usando búsqueda en memoria")
+            return self._get_similar_resources_inmemory(
+                np.array(query_embedding), limit, context_id, exclude_ids, min_similarity
+            )
+
+        qs = EducationalResource.objects.filter(embedding__isnull=False)
+
+        if context_id:
+            qs = qs.filter(
+                Q(lti_context_id=context_id) | Q(lti_context_id__isnull=True)
+            )
+
+        if exclude_ids:
+            qs = qs.exclude(id__in=exclude_ids)
+
+        # Distancia coseno < (1 - min_similarity): similitud ≥ min_similarity
+        max_distance = 1.0 - min_similarity
+
+        results = (
+            qs
+            .annotate(distance=CosineDistance('embedding', query_embedding))
+            .filter(distance__lt=max_distance)
+            .order_by('distance')[:limit]
+        )
+
+        return [
+            {
+                'id': r.id,
+                'title': r.title,
+                'url': r.url,
+                'description': r.description,
+                'type': r.resource_type,
+                'difficulty': r.difficulty_level,
+                'tags': r.tags or '',
+                'score': float(1.0 - r.distance),  # Convertir distancia → similitud
+                'source': 'content_embedding',
+            }
+            for r in results
+        ]
+
+    def get_similar_resources(
+        self,
+        resource_id: int,
+        limit: int = 5,
+        min_similarity: float = 0.3,
+    ) -> List[Dict]:
+        """Encuentra recursos similares a un recurso dado."""
+        from lti_recommender_project.apps.resources.models import EducationalResource
+
         try:
-            # Obtener el recurso de referencia
-            source_resource = EducationalResource.objects.get(id=resource_id)
-            
-            if not source_resource.embedding:
-                logger.warning(f"Recurso {resource_id} no tiene embedding")
-                return []
-            
-            source_embedding = np.array(source_resource.embedding)
-            
-            # Obtener todos los recursos con embeddings (excepto el source)
-            candidates = EducationalResource.objects.filter(
-                embedding__isnull=False
-            ).exclude(id=resource_id)
-            
-            similarities = []
-            
-            for candidate in candidates:
-                try:
-                    candidate_embedding = np.array(candidate.embedding)
-                    
-                    # Calcular similitud coseno
-                    similarity = self._cosine_similarity(
-                        source_embedding, 
-                        candidate_embedding
-                    )
-                    
-                    if similarity >= min_similarity:
-                        similarities.append({
-                            'resource': candidate,
-                            'similarity': float(similarity)
-                        })
-                        
-                except Exception as e:
-                    logger.error(f"Error comparando con recurso {candidate.id}: {e}")
-                    continue
-            
-            # Ordenar por similitud descendente
-            similarities.sort(key=lambda x: x['similarity'], reverse=True)
-            
-            # Retornar los top N
-            return similarities[:limit]
-            
+            source = EducationalResource.objects.get(id=resource_id)
         except EducationalResource.DoesNotExist:
-            logger.error(f"Recurso {resource_id} no encontrado")
             return []
-        except Exception as e:
-            logger.error(f"Error en get_similar_resources: {e}")
+
+        if not source.embedding:
+            logger.warning(f"Recurso {resource_id} sin embedding")
             return []
-    
+
+        embedding = source.embedding if isinstance(source.embedding, list) else list(source.embedding)
+        return self.get_similar_resources_pgvector(
+            query_embedding=embedding,
+            limit=limit,
+            min_similarity=min_similarity,
+            exclude_ids={resource_id},
+        )
+
+    def find_similar_by_text(
+        self,
+        query_text: str,
+        limit: int = 5,
+        context_id: Optional[str] = None,
+        min_similarity: float = 0.2,
+    ) -> List[Dict]:
+        """Busca recursos similares a un texto de búsqueda."""
+        query_embedding = self.generate_embedding(query_text)
+        if not query_embedding:
+            return []
+
+        return self.get_similar_resources_pgvector(
+            query_embedding=query_embedding,
+            limit=limit,
+            context_id=context_id,
+            min_similarity=min_similarity,
+        )
+
+    def _get_similar_resources_inmemory(
+        self,
+        query_vec: np.ndarray,
+        limit: int,
+        context_id: Optional[str],
+        exclude_ids: Optional[set],
+        min_similarity: float,
+    ) -> List[Dict]:
+        """Fallback cuando pgvector no está disponible — O(n) en memoria."""
+        from lti_recommender_project.apps.resources.models import EducationalResource
+        from django.db.models import Q
+
+        qs = EducationalResource.objects.filter(embedding__isnull=False)
+        if context_id:
+            qs = qs.filter(Q(lti_context_id=context_id) | Q(lti_context_id__isnull=True))
+        if exclude_ids:
+            qs = qs.exclude(id__in=exclude_ids)
+
+        results = []
+        for r in qs:
+            try:
+                candidate_vec = np.array(r.embedding)
+                sim = float(np.dot(query_vec, candidate_vec))  # Already normalized
+                if sim >= min_similarity:
+                    results.append({
+                        'id': r.id,
+                        'title': r.title,
+                        'url': r.url,
+                        'description': r.description,
+                        'type': r.resource_type,
+                        'difficulty': r.difficulty_level,
+                        'tags': r.tags or '',
+                        'score': sim,
+                        'source': 'content_embedding',
+                    })
+            except Exception:
+                continue
+
+        results.sort(key=lambda x: x['score'], reverse=True)
+        return results[:limit]
+
     def _cosine_similarity(self, vec1: np.ndarray, vec2: np.ndarray) -> float:
-        """
-        Calcula la similitud coseno entre dos vectores.
-        
-        Args:
-            vec1: Primer vector
-            vec2: Segundo vector
-            
-        Returns:
-            Similitud coseno (0-1)
-        """
-        dot_product = np.dot(vec1, vec2)
+        """Compatibilidad con código anterior."""
         norm1 = np.linalg.norm(vec1)
         norm2 = np.linalg.norm(vec2)
-        
         if norm1 == 0 or norm2 == 0:
             return 0.0
-        
-        return dot_product / (norm1 * norm2)
-    
-    def find_similar_by_text(
-        self, 
-        query_text: str, 
-        limit: int = 5,
-        context_id: Optional[str] = None
-    ) -> List[Dict]:
-        """
-        Encuentra recursos similares a un texto de búsqueda.
-        
-        Args:
-            query_text: Texto de búsqueda
-            limit: Número máximo de resultados
-            context_id: Filtrar por contexto LTI (opcional)
-            
-        Returns:
-            Lista de recursos similares con sus scores
-        """
-        from lti_recommender_project.apps.resources.models import EducationalResource
-        
-        try:
-            # Generar embedding del query
-            query_embedding = np.array(self.generate_embedding(query_text))
-            
-            if len(query_embedding) == 0:
-                return []
-            
-            # Obtener candidatos
-            candidates = EducationalResource.objects.filter(embedding__isnull=False)
-            
-            if context_id:
-                candidates = candidates.filter(lti_context_id=context_id)
-            
-            similarities = []
-            
-            for candidate in candidates:
-                try:
-                    candidate_embedding = np.array(candidate.embedding)
-                    similarity = self._cosine_similarity(query_embedding, candidate_embedding)
-                    
-                    similarities.append({
-                        'resource': candidate,
-                        'similarity': float(similarity)
-                    })
-                    
-                except Exception as e:
-                    logger.error(f"Error comparando query con recurso {candidate.id}: {e}")
-                    continue
-            
-            # Ordenar y retornar top N
-            similarities.sort(key=lambda x: x['similarity'], reverse=True)
-            return similarities[:limit]
-            
-        except Exception as e:
-            logger.error(f"Error en find_similar_by_text: {e}")
-            return []
+        return float(np.dot(vec1, vec2) / (norm1 * norm2))
 
 
-# Instancia global singleton del servicio
-_embedding_service_instance = None
+# Singleton
+_embedding_service_instance: Optional[EmbeddingService] = None
 
 
 def get_embedding_service() -> EmbeddingService:
-    """
-    Obtiene la instancia singleton del servicio de embeddings.
-    
-    Returns:
-        Instancia de EmbeddingService
-    """
+    """Obtiene la instancia singleton del servicio de embeddings."""
     global _embedding_service_instance
-    
     if _embedding_service_instance is None:
         _embedding_service_instance = EmbeddingService()
-    
     return _embedding_service_instance

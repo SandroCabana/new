@@ -34,6 +34,15 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = env.bool('DEBUG', default=False)
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
+# Allow CSRF from localhost on any port (needed for Docker + non-standard ports)
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost',
+    'http://localhost:8080',
+    'http://127.0.0.1',
+    'http://127.0.0.1:8080',
+]
+
+
 # ==============================================================================
 # APPLICATION DEFINITION
 # ==============================================================================
@@ -51,6 +60,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',  # Token authentication for browser extension
     'corsheaders',  # CORS support for browser extension
     'pylti1p3.contrib.django.lti1p3_tool_config',
+    'django_celery_beat',   # Celery Beat scheduler
     
     # Project apps
     'lti_recommender_project.apps.resources',
@@ -58,6 +68,7 @@ INSTALLED_APPS = [
     'lti_recommender_project.apps.lti_integration',
     'lti_recommender_project.apps.users',
     'lti_recommender_project.apps.recommendations',
+    'lti_recommender_project.apps.analytics',
 ]
 
 MIDDLEWARE = [
@@ -121,14 +132,18 @@ REDIS_URL = env('REDIS_URL', default=None)
 if REDIS_URL:
     CACHES = {
         'default': {
-            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'BACKEND': 'django_redis.cache.RedisCache',
             'LOCATION': REDIS_URL,
             'OPTIONS': {
-                'parser_class': 'redis.connection.HiredisParser',
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'SOCKET_CONNECT_TIMEOUT': 5,
+                'SOCKET_TIMEOUT': 5,
             },
-            'TIMEOUT': env.int('CACHE_TTL', default=300),
+            'TIMEOUT': env.int('CACHE_TTL', default=1800),
         }
     }
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+    SESSION_CACHE_ALIAS = 'default'
 else:
     CACHES = {
         'default': {
@@ -183,6 +198,11 @@ CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = env('CSRF_COOKIE_SAMESITE', default='None')
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
 
+# Proxy headers (critical for LTI when behind Nginx)
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # X-Frame-Options (allow embedding in LMS)
 X_FRAME_OPTIONS = 'ALLOWALL'
 
@@ -212,15 +232,35 @@ LTI_TOOL_CONFIG = {
 # ==============================================================================
 
 RECOMMENDATION_CONFIG = {
-    'EMBEDDING_MODEL': env('ML_EMBEDDING_MODEL', default='sentence-transformers/all-MiniLM-L6-v2'),
-    'EMBEDDING_DIMENSION': env.int('ML_EMBEDDING_DIMENSION', default=384),
+    # Multilingual model — supports Spanish + English
+    'EMBEDDING_MODEL': env('ML_EMBEDDING_MODEL', default='paraphrase-multilingual-mpnet-base-v2'),
+    'EMBEDDING_DIMENSION': env.int('ML_EMBEDDING_DIMENSION', default=768),
     'SIMILARITY_THRESHOLD': env.float('ML_SIMILARITY_THRESHOLD', default=0.3),
     'CONTENT_WEIGHT': env.float('ML_CONTENT_WEIGHT', default=0.5),
     'USER_WEIGHT': env.float('ML_USER_WEIGHT', default=0.3),
     'POPULARITY_WEIGHT': env.float('ML_POPULARITY_WEIGHT', default=0.2),
+    # Cache TTL for precomputed recommendations (seconds)
+    'RECOMMENDATION_CACHE_TTL': env.int('RECOMMENDATION_CACHE_TTL', default=1800),
+    # Precompute for users active in last N days
+    'ACTIVE_USER_DAYS': env.int('ACTIVE_USER_DAYS', default=7),
 }
 
 EMBEDDING_MODEL = RECOMMENDATION_CONFIG['EMBEDDING_MODEL']
+
+# ==============================================================================
+# CELERY SETTINGS
+# ==============================================================================
+
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default=REDIS_URL or 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default=REDIS_URL or 'redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+# Prevent tasks from running too long (30 min limit)
+CELERY_TASK_SOFT_TIME_LIMIT = 1800
+CELERY_TASK_TIME_LIMIT = 2100
 
 # ==============================================================================
 # LOGGING

@@ -7,7 +7,7 @@ echo "🚀 Starting LTI Recommender application..."
 
 # Generate LTI keys if they don't exist
 echo "🔑 Setting up LTI keys..."
-bash /app/scripts/generate-lti-keys.sh
+bash /srv/lti_recommender_project/scripts/generate-lti-keys.sh
 
 # Wait for database to be ready
 echo "⏳ Waiting for database..."
@@ -43,8 +43,31 @@ for i in range(max_retries):
 END
 
 # Run database migrations
+echo "🔄 Installing pgvector PostgreSQL extension..."
+python << END
+import psycopg2
+import os
+
+try:
+    conn = psycopg2.connect(
+        dbname=os.environ.get('DB_NAME', 'lti_recommender_db'),
+        user=os.environ.get('DB_USER', 'lti_user'),
+        password=os.environ.get('DB_PASSWORD', 'lti_password'),
+        host=os.environ.get('DB_HOST', 'db'),
+        port=os.environ.get('DB_PORT', '5432')
+    )
+    conn.autocommit = True
+    cur = conn.cursor()
+    cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+    conn.close()
+    print("✅ pgvector extension installed!")
+except Exception as e:
+    print(f"⚠️  pgvector extension warning (may already exist): {e}")
+END
+
 echo "🔄 Running database migrations..."
 python manage.py migrate --noinput
+python manage.py migrate django_celery_beat --noinput
 
 # Collect static files
 echo "📦 Collecting static files..."

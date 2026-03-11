@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'pylti1p3.contrib.django.lti1p3_tool_config',
+    'django_celery_beat',  # Celery Beat scheduler
     
     # Project apps
     'lti_recommender_project.apps.resources',
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
     'lti_recommender_project.apps.lti_integration',
     'lti_recommender_project.apps.users',
     'lti_recommender_project.apps.recommendations',
+    'lti_recommender_project.apps.analytics',
 ]
 
 # ... (otras configuraciones)
@@ -171,22 +173,32 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake', # Un nombre único para tu caché
+        'LOCATION': 'unique-snowflake',
     }
 }
 
 # Recommendation Engine Settings
 RECOMMENDATION_CONFIG = {
-    'EMBEDDING_MODEL': 'sentence-transformers/all-MiniLM-L6-v2',
-    'EMBEDDING_DIMENSION': 384,
+    # Multilingual model — supports Spanish + English (768 dims)
+    'EMBEDDING_MODEL': 'paraphrase-multilingual-mpnet-base-v2',
+    'EMBEDDING_DIMENSION': 768,
     'SIMILARITY_THRESHOLD': 0.3,
     'CONTENT_WEIGHT': 0.5,
     'USER_WEIGHT': 0.3,
     'POPULARITY_WEIGHT': 0.2,
+    'RECOMMENDATION_CACHE_TTL': 1800,
+    'ACTIVE_USER_DAYS': 7,
 }
 
-# Usar la configuración de embedding en las apps
 EMBEDDING_MODEL = RECOMMENDATION_CONFIG['EMBEDDING_MODEL']
+
+# Celery Settings (development — uses in-memory broker)
+CELERY_BROKER_URL = 'memory://'
+CELERY_RESULT_BACKEND = 'cache+memory://'
+CELERY_TASK_ALWAYS_EAGER = True  # Execute tasks synchronously in dev
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 
 # REST Framework Configuration
 REST_FRAMEWORK = {

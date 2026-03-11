@@ -1,357 +1,445 @@
 """
-Motor de Recomendaciones Híbrido
-Combina filtrado basado en contenido, preferencias de usuario y popularidad.
-"""
+Motor de Recomendaciones Híbrido — v2
+Combina filtrado colaborativo, similitud de contenido semántico y popularidad.
+Pesos DINÁMICOS según estado del StudentProfile (cold-start vs activo).
 
+Mejoras vs v1:
+- Pesos dinámicos por perfil de usuario (no hardcoded)
+- Content-based usa embeddings semánticos (pgvector) no tags__icontains
+- Cold-start inteligente con keywords del curso
+- Fallback aleatorio reemplazado por popularidad real
+"""
 import logging
-from typing import List, Dict, Optional
-from collections import Counter, defaultdict
-from django.db.models import Count, Avg, Q
+from typing import List, Dict, Any, Optional
+from collections import defaultdict, Counter
+from django.db.models import Count, Q
 
 logger = logging.getLogger(__name__)
 
 
 class RecommendationEngine:
     """
-    Motor de recomendaciones híbrido que combina:
-    - 50% Similitud de contenido (embeddings semánticos)
-    - 30% Preferencias de usuario (perfil y historial)
-    - 20% Popularidad (interacciones y ratings)
+    Motor de recomendaciones híbrido.
+    Los pesos se aplican desde StudentProfile.get_hybrid_weights().
     """
-    
-    def __init__(
-        self, 
-        content_weight: float = 0.5,
-        user_weight: float = 0.3,
-        popularity_weight: float = 0.2
-    ):
-        """
-        Inicializa el motor de recomendaciones.
-        
-        Args:
-            content_weight: Peso del filtrado basado en contenido
-            user_weight: Peso de las preferencias de usuario
-            popularity_weight: Peso de la popularidad
-        """
-        self.content_weight = content_weight
-        self.user_weight = user_weight
-        self.popularity_weight = popularity_weight
-        
-        # Validar que los pesos sumen 1.0
-        total_weight = content_weight + user_weight + popularity_weight
-        if abs(total_weight - 1.0) > 0.01:
-            logger.warning(f"Los pesos no suman 1.0 (suman {total_weight}), normalizando...")
-            self.content_weight /= total_weight
-            self.user_weight /= total_weight
-            self.popularity_weight /= total_weight
-    
+
+    def __init__(self, content_weight=0.5, user_weight=0.3, popularity_weight=0.2):
+        # Normalize weights so they sum to 1
+        total = content_weight + user_weight + popularity_weight
+        if total > 0:
+            self.content_weight = content_weight / total
+            self.user_weight = user_weight / total
+            self.popularity_weight = popularity_weight / total
+        else:
+            self.content_weight = 0.5
+            self.user_weight = 0.3
+            self.popularity_weight = 0.2
+
     def get_recommendations(
         self,
         user_id: str,
         context_id: str,
         limit: int = 5,
-        exclude_viewed: bool = True
-    ) -> List[Dict]:
+        exclude_viewed: bool = True,
+        student_profile=None,
+    ) -> List[Dict[str, Any]]:
         """
-        Obtiene recomendaciones personalizadas para un usuario.
-        
-        Args:
-            user_id: ID del usuario LTI
-            context_id: ID del contexto/curso LTI
-            limit: Número de recomendaciones a retornar
-            exclude_viewed: Si es True, excluye recursos ya vistos
-            
-        Returns:
-            Lista de recursos recomendados con scores
+        Obtiene recomendaciones personalizadas usando pesos dinámicos del StudentProfile.
         """
         from lti_recommender_project.apps.resources.models import EducationalResource
         from lti_recommender_project.apps.interactions.models import UserInteraction
-        from lti_recommender_project.apps.users.models import UserProfile
-        
+
         try:
-            # Obtener o crear perfil de usuario
-            user_profile, _ = UserProfile.objects.get_or_create(
-                lti_user_id=user_id,
-                defaults={'display_name': user_id}
-            )
-            
-            # Obtener recursos del contexto actual
-            resources = EducationalResource.objects.filter(
-                Q(lti_context_id=context_id) | Q(lti_context_id__isnull=True)
-            )
-            
-            # Excluir recursos ya vistos si se solicita
+            # Get or build student profile
+            if student_profile is None:
+                from lti_recommender_project.apps.users.student_profile import StudentProfile
+                student_profile = StudentProfile.from_ids(user_id, context_id)
+
+            # Get dynamic weights
+            weights = student_profile.get_hybrid_weights()
+
+            # Get viewed resources
+            viewed_ids = set()
             if exclude_viewed:
-                viewed_ids = UserInteraction.objects.filter(
-                    lti_user_id=user_id,
-                    lti_context_id=context_id
-                ).values_list('resource_id', flat=True)
-                resources = resources.exclude(id__in=viewed_ids)
-            
-            if not resources.exists():
-                logger.info(f"No hay recursos disponibles para recomendar en contexto {context_id}")
-                return []
-            
-            # Calcular scores para cada recurso
-            scored_resources = []
-            
-            for resource in resources:
-                score = self._calculate_resource_score(
-                    resource, 
-                    user_profile, 
-                    user_id,
-                    context_id
+                viewed_ids = set(
+                    UserInteraction.objects.filter(
+                        lti_user_id=user_id
+                    ).values_list('resource_id', flat=True)
                 )
-                scored_resources.append({
-                    'resource': resource,
-                    'score': score,
-                    'title': resource.title,
-                    'url': resource.url,
-                    'description': resource.description,
-                    'type': resource.resource_type,
-                    'difficulty': resource.difficulty_level,
-                    'id': resource.id,
-                })
-            
-            # Ordenar por score descendente
-            scored_resources.sort(key=lambda x: x['score'], reverse=True)
-            
-            # Retornar top N
-            return scored_resources[:limit]
-            
+
+            # Handle cold-start immediately
+            if student_profile.is_new_user:
+                return self._handle_cold_start(student_profile, context_id, viewed_ids, limit)
+
+            # --- Strategy 1: Collaborative Filtering ---
+            collaborative_recs = self._collaborative_filtering(
+                user_id, context_id, viewed_ids, limit * 2
+            )
+
+            # --- Strategy 2: Content-Based (Semantic Embeddings) ---
+            content_recs = self._content_based_semantic(
+                user_id, context_id, viewed_ids, limit * 2
+            )
+
+            # --- Strategy 3: Popular in Context ---
+            popular_recs = self._popular_in_context(context_id, viewed_ids, limit * 2)
+
+            # Combine with dynamic weights
+            combined = self._combine_recommendations(
+                collaborative=collaborative_recs,
+                content=content_recs,
+                popular=popular_recs,
+                weights=weights,
+                limit=limit,
+            )
+
+            # Fill to limit if needed
+            if len(combined) < limit:
+                generic = self._get_generic_resources(viewed_ids, limit - len(combined))
+                combined.extend(generic)
+
+            return self._format_recommendations(combined[:limit])
+
         except Exception as e:
-            logger.error(f"Error en get_recommendations: {e}")
-            return self._fallback_recommendations(context_id, limit)
-    
-    def _calculate_resource_score(
+            logger.error(f"Error generating recommendations for {user_id}: {e}", exc_info=True)
+            return self._get_fallback_recommendations(context_id, limit)
+
+    def _handle_cold_start(
         self,
-        resource,
-        user_profile,
-        user_id: str,
-        context_id: str
-    ) -> float:
+        profile,
+        context_id: str,
+        viewed_ids: set,
+        limit: int,
+    ) -> List[Dict[str, Any]]:
         """
-        Calcula el score total de un recurso combinando las tres estrategias.
-        
-        Returns:
-            Score total del recurso (0-1)
-        """
-        # 1. Score de contenido (similitud semántica)
-        content_score = self._content_based_score(resource, user_id, context_id)
-        
-        # 2. Score de usuario (preferencias y nivel)
-        user_score = self._user_based_score(resource, user_profile)
-        
-        # 3. Score de popularidad
-        popularity_score = self._popularity_score(resource, context_id)
-        
-        # Combinar scores con pesos
-        total_score = (
-            self.content_weight * content_score +
-            self.user_weight * user_score +
-            self.popularity_weight * popularity_score
-        )
-        
-        return total_score
-    
-    def _content_based_score(
-        self, 
-        resource, 
-        user_id: str,
-        context_id: str
-    ) -> float:
-        """
-        Calcula score basado en similitud de contenido.
-        Usa embeddings semánticos de recursos previamente interactuados.
-        """
-        from lti_recommender_project.apps.interactions.models import UserInteraction
-        from lti_recommender_project.apps.recommendations.services.embedding_service import get_embedding_service
-        
-        try:
-            # Si el recurso no tiene embedding, retornar score neutro
-            if not resource.embedding:
-                return 0.5
-            
-            # Obtener recursos con los que el usuario ha interactuado positivamente
-            positive_interactions = UserInteraction.objects.filter(
-                lti_user_id=user_id,
-                lti_context_id=context_id
-            ).filter(
-                Q(completion_percentage__gte=50) |  # Completó más del 50%
-                Q(rating__gte=3) |  # Rating >= 3
-                Q(interaction_type='completed')
-            ).select_related('resource').order_by('-timestamp')[:10]
-            
-            if not positive_interactions.exists():
-                return 0.5  # Sin historial, score neutro
-            
-            # Calcular similitud promedio con recursos previos
-            embedding_service = get_embedding_service()
-            similarities = []
-            
-            for interaction in positive_interactions:
-                similar_resources = embedding_service.get_similar_resources(
-                    interaction.resource.id,
-                    limit=100,  # Buscar en un pool grande
-                    min_similarity=0.0
-                )
-                
-                for similar in similar_resources:
-                    if similar['resource'].id == resource.id:
-                        similarities.append(similar['similarity'])
-                        break
-            
-            if similarities:
-                return sum(similarities) / len(similarities)
-            else:
-                return 0.5
-                
-        except Exception as e:
-            logger.error(f"Error en _content_based_score: {e}")
-            return 0.5
-    
-    def _user_based_score(self, resource, user_profile) -> float:
-        """
-        Calcula score basado en las preferencias del usuario.
-        """
-        score = 0.5  # Base neutra
-        
-        try:
-            # 1. Ajustar por nivel del usuario vs dificultad del recurso
-            if resource.difficulty_level:
-                level_mapping = {
-                    'beginner': {'beginner': 1.0, 'intermediate': 0.6, 'advanced': 0.3},
-                    'intermediate': {'beginner': 0.5, 'intermediate': 1.0, 'advanced': 0.7},
-                    'advanced': {'beginner': 0.3, 'intermediate': 0.7, 'advanced': 1.0},
-                }
-                
-                if user_profile.inferred_level in level_mapping:
-                    level_score = level_mapping[user_profile.inferred_level].get(
-                        resource.difficulty_level, 
-                        0.5
-                    )
-                    score = score * 0.4 + level_score * 0.6
-            
-            # 2. Ajustar por tipos de recursos preferidos
-            if user_profile.preferred_resource_types and resource.resource_type:
-                total_interactions = sum(user_profile.preferred_resource_types.values())
-                if total_interactions > 0:
-                    type_frequency = user_profile.preferred_resource_types.get(
-                        resource.resource_type, 
-                        0
-                    )
-                    type_score = type_frequency / total_interactions
-                    score = score * 0.6 + type_score * 0.4
-            
-            # 3. Boost para recursos con tags de interés del usuario
-            if user_profile.interest_tags and resource.tags:
-                user_tags = set(tag.strip().lower() for tag in user_profile.interest_tags.split(','))
-                resource_tags = set(tag.strip().lower() for tag in resource.tags.split(','))
-                
-                if user_tags and resource_tags:
-                    overlap = len(user_tags & resource_tags)
-                    if overlap > 0:
-                        tag_score = min(overlap / len(user_tags), 1.0)
-                        score = score * 0.7 + tag_score * 0.3
-            
-            return min(max(score, 0.0), 1.0)  # Clamp entre 0 y 1
-            
-        except Exception as e:
-            logger.error(f"Error en _user_based_score: {e}")
-            return 0.5
-    
-    def _popularity_score(self, resource, context_id: str) -> float:
-        """
-        Calcula score basado en popularidad del recurso.
-        """
-        from lti_recommender_project.apps.interactions.models import UserInteraction
-        
-        try:
-            # Obtener estadísticas del recurso en el contexto
-            stats = UserInteraction.objects.filter(
-                resource=resource,
-                lti_context_id=context_id
-            ).aggregate(
-                total_views=Count('id'),
-                avg_rating=Avg('rating'),
-                avg_completion=Avg('completion_percentage')
-            )
-            
-            total_views = stats['total_views'] or 0
-            avg_rating = stats['avg_rating'] or 0
-            avg_completion = stats['avg_completion'] or 0
-            
-            # Normalizar métricas
-            # View score (log scale para suavizar)
-            import math
-            view_score = min(math.log(total_views + 1) / math.log(50), 1.0)  # 50 vistas = máximo
-            
-            # Rating score (normalizar 1-5 a 0-1)
-            rating_score = (avg_rating - 1) / 4 if avg_rating > 0 else 0.5
-            
-            # Completion score (ya está en 0-100, normalizar a 0-1)
-            completion_score = avg_completion / 100 if avg_completion > 0 else 0.5
-            
-            # Combinar métricas de popularidad
-            popularity = (
-                0.4 * view_score +
-                0.4 * rating_score +
-                0.2 * completion_score
-            )
-            
-            return popularity
-            
-        except Exception as e:
-            logger.error(f"Error en _popularity_score: {e}")
-            return 0.5
-    
-    def _fallback_recommendations(self, context_id: str, limit: int) -> List[Dict]:
-        """
-        Recomendaciones de fallback en caso de error.
-        Retorna los recursos más populares del contexto.
+        Cold-start: usuario nuevo sin historial.
+        Estrategia: populares en contexto + recursos relacionados con keywords del curso.
+        Referente: Khan Academy (topic inference del nombre del curso).
         """
         from lti_recommender_project.apps.resources.models import EducationalResource
+
+        combined = []
+        seen_ids = set()
+
+        # 1. Recursos relacionados con el tema del curso (por keywords)
+        keywords = profile.get_course_keywords()
+        if keywords:
+            keyword_q = Q()
+            for kw in keywords[:3]:
+                keyword_q |= Q(tags__icontains=kw) | Q(title__icontains=kw)
+
+            topic_resources = list(
+                EducationalResource.objects.filter(keyword_q)
+                .exclude(id__in=viewed_ids)
+                .order_by('difficulty_level')[:int(limit * 0.6)]
+            )
+            for r in topic_resources:
+                if r.id not in seen_ids:
+                    combined.append((r, 'cold_start_topic', 0.70))
+                    seen_ids.add(r.id)
+
+        # 2. Populares en el contexto (fillup)
+        popular = self._popular_in_context(context_id, viewed_ids | seen_ids, limit)
+        for r, src, score in popular:
+            if len(combined) >= limit:
+                break
+            if r.id not in seen_ids:
+                combined.append((r, 'cold_start_popular', 0.60))
+                seen_ids.add(r.id)
+
+        return self._format_recommendations(combined[:limit])
+
+    def _collaborative_filtering(
+        self,
+        user_id: str,
+        context_id: str,
+        exclude_ids: set,
+        limit: int,
+    ) -> List[tuple]:
+        """Filtrado colaborativo: recursos que usuarios similares interactuaron."""
+        from lti_recommender_project.apps.resources.models import EducationalResource
         from lti_recommender_project.apps.interactions.models import UserInteraction
-        
-        try:
-            # Obtener recursos ordenados por número de interacciones
-            popular_resources = EducationalResource.objects.filter(
-                Q(lti_context_id=context_id) | Q(lti_context_id__isnull=True)
+
+        user_resources = list(
+            UserInteraction.objects.filter(
+                lti_user_id=user_id
+            ).values_list('resource_id', flat=True)
+        )
+
+        if not user_resources:
+            return []
+
+        similar_user_ids = list(
+            UserInteraction.objects.filter(
+                resource_id__in=user_resources
+            ).exclude(
+                lti_user_id=user_id
+            ).values_list('lti_user_id', flat=True).distinct()[:100]
+        )
+
+        if not similar_user_ids:
+            return []
+
+        resources = list(
+            EducationalResource.objects.filter(
+                interactions__lti_user_id__in=similar_user_ids
+            ).exclude(
+                id__in=exclude_ids
             ).annotate(
                 interaction_count=Count('interactions')
             ).order_by('-interaction_count')[:limit]
-            
-            return [
-                {
-                    'resource': res,
-                    'score': 0.5,
-                    'title': res.title,
-                    'url': res.url,
-                    'description': res.description,
-                    'type': res.resource_type,
-                }
-                for res in popular_resources
-            ]
-            
-        except Exception as e:
-            logger.error(f"Error en _fallback_recommendations: {e}")
+        )
+
+        return [(r, 'collaborative', 0.80) for r in resources]
+
+    def _content_based_semantic(
+        self,
+        user_id: str,
+        context_id: str,
+        exclude_ids: set,
+        limit: int,
+    ) -> List[tuple]:
+        """
+        Content-based usando embeddings semánticos.
+        Construye un 'user embedding' como promedio ponderado de los vistos.
+        Luego busca recursos similares con pgvector.
+        """
+        from lti_recommender_project.apps.interactions.models import UserInteraction
+        from lti_recommender_project.apps.resources.models import EducationalResource
+        import numpy as np
+
+        interactions = list(
+            UserInteraction.objects.filter(
+                lti_user_id=user_id
+            ).select_related('resource').order_by('-resource__updated_at')[:20]
+        )
+
+        if not interactions:
             return []
 
+        # Build user embedding as weighted average
+        embeddings = []
+        weights = []
+        for interaction in interactions:
+            resource = interaction.resource
+            if resource and resource.embedding:
+                emb = resource.embedding
+                if isinstance(emb, list):
+                    emb = np.array(emb)
+                # Weight by completion (or 0.5 default)
+                w = (interaction.completion_percentage or 50) / 100
+                embeddings.append(emb)
+                weights.append(w)
 
-# Instancia global singleton
-_recommendation_engine_instance = None
+        if not embeddings:
+            # Fallback: tag/type based (old method)
+            return self._content_based_tags(user_id, context_id, exclude_ids, limit)
+
+        # Weighted average embedding
+        weights_arr = np.array(weights)
+        weighted_sum = sum(w * e for w, e in zip(weights_arr, embeddings))
+        user_embedding = weighted_sum / weights_arr.sum()
+        # Normalize
+        norm = np.linalg.norm(user_embedding)
+        if norm > 0:
+            user_embedding = user_embedding / norm
+
+        try:
+            from lti_recommender_project.apps.recommendations.services.embedding_service import (
+                get_embedding_service
+            )
+            service = get_embedding_service()
+            similar = service.get_similar_resources_pgvector(
+                query_embedding=user_embedding.tolist(),
+                limit=limit,
+                context_id=context_id,
+                exclude_ids=exclude_ids,
+                min_similarity=0.25,
+            )
+            return [(r, 'content_semantic', r.get('score', 0.5)) for r in similar]
+        except Exception as e:
+            logger.warning(f"pgvector search failed, using tag fallback: {e}")
+            return self._content_based_tags(user_id, context_id, exclude_ids, limit)
+
+    def _content_based_tags(
+        self,
+        user_id: str,
+        context_id: str,
+        exclude_ids: set,
+        limit: int,
+    ) -> List[tuple]:
+        """Fallback content-based usando tags (método original)."""
+        from lti_recommender_project.apps.interactions.models import UserInteraction
+        from lti_recommender_project.apps.resources.models import EducationalResource
+
+        user_interactions = UserInteraction.objects.filter(
+            lti_user_id=user_id
+        ).select_related('resource')
+
+        if not user_interactions.exists():
+            return []
+
+        resource_types, tags_list = [], []
+        for interaction in user_interactions:
+            resource = interaction.resource
+            if resource.resource_type:
+                resource_types.append(resource.resource_type)
+            if resource.tags:
+                tags_list.extend(t.strip() for t in resource.tags.split(','))
+
+        most_common_type = Counter(resource_types).most_common(1)
+        most_common_tags = [tag for tag, _ in Counter(tags_list).most_common(3)]
+
+        query = Q()
+        if most_common_type:
+            query |= Q(resource_type=most_common_type[0][0])
+        for tag in most_common_tags:
+            query |= Q(tags__icontains=tag)
+
+        resources = list(
+            EducationalResource.objects.filter(query)
+            .exclude(id__in=exclude_ids)
+            .distinct()[:limit]
+        )
+        return [(r, 'content_tags', 0.65) for r in resources]
+
+    def _popular_in_context(
+        self,
+        context_id: str,
+        exclude_ids: set,
+        limit: int,
+    ) -> List[tuple]:
+        """Recursos populares por views únicas en el contexto."""
+        from lti_recommender_project.apps.resources.models import EducationalResource
+
+        resources = list(
+            EducationalResource.objects.filter(
+                Q(lti_context_id=context_id) | Q(lti_context_id__isnull=True)
+            ).exclude(
+                id__in=exclude_ids
+            ).annotate(
+                view_count=Count(
+                    'interactions',
+                    filter=Q(interactions__interaction_type='viewed'),
+                    distinct=True,
+                )
+            ).order_by('-view_count')[:limit]
+        )
+        return [(r, 'popular', 0.55) for r in resources]
+
+    def _get_generic_resources(self, exclude_ids: set, limit: int) -> List[tuple]:
+        """Recursos genéricos para llenar cuando no hay suficientes."""
+        from lti_recommender_project.apps.resources.models import EducationalResource
+
+        resources = list(
+            EducationalResource.objects.filter(
+                lti_context_id__isnull=True
+            ).exclude(
+                id__in=exclude_ids
+            ).order_by('-created_at')[:limit]  # Más recientes (no random)
+        )
+        return [(r, 'generic', 0.40) for r in resources]
+
+    def _combine_recommendations(
+        self,
+        collaborative: List[tuple],
+        content: List[tuple],
+        popular: List[tuple],
+        weights: Dict[str, float],
+        limit: int,
+    ) -> List[tuple]:
+        """
+        Combina resultados usando pesos dinámicos del StudentProfile.
+        Interleaves para garantizar diversidad.
+        """
+        combined = []
+        seen_ids = set()
+
+        sources_and_weights = [
+            (collaborative, weights.get('collaborative', 0.30)),
+            (content, weights.get('content', 0.35)),
+            (popular, weights.get('popular', 0.15)),
+        ]
+
+        counts = {
+            'collaborative': max(1, int(limit * weights.get('collaborative', 0.30))),
+            'content': max(1, int(limit * weights.get('content', 0.35))),
+            'popular': max(1, int(limit * weights.get('popular', 0.15))),
+        }
+
+        for recs, weight in sources_and_weights:
+            for item in recs:
+                if len(combined) >= limit:
+                    break
+                if isinstance(item, dict):
+                    # pgvector result
+                    rid = item.get('id')
+                    if rid and rid not in seen_ids:
+                        from lti_recommender_project.apps.resources.models import EducationalResource
+                        try:
+                            r = EducationalResource.objects.get(id=rid)
+                            combined.append((r, item.get('source', 'content'), item.get('score', 0.5)))
+                            seen_ids.add(rid)
+                        except Exception:
+                            pass
+                else:
+                    r, src, score = item
+                    if r.id not in seen_ids:
+                        combined.append((r, src, score))
+                        seen_ids.add(r.id)
+
+        return combined
+
+    def _format_recommendations(self, resources: List[tuple]) -> List[Dict[str, Any]]:
+        """Formatea recursos al formato de respuesta estándar."""
+        result = []
+        for item in resources:
+            if isinstance(item, dict):
+                result.append(item)
+                continue
+            resource, source, score = item
+            result.append({
+                'id': resource.id,
+                'title': resource.title,
+                'url': resource.url,
+                'description': resource.description or 'Recurso educativo recomendado',
+                'type': resource.resource_type,
+                'author': resource.author or 'Desconocido',
+                'tags': resource.tags or '',
+                'difficulty': resource.difficulty_level or 'N/A',
+                'score': round(float(score), 4),
+                'source': source,
+            })
+        return result
+
+    def _get_fallback_recommendations(self, context_id: str, limit: int) -> List[Dict[str, Any]]:
+        """Recomendaciones de respaldo en caso de error general."""
+        try:
+            from lti_recommender_project.apps.resources.models import EducationalResource
+            resources = list(
+                EducationalResource.objects.filter(
+                    Q(lti_context_id=context_id) | Q(lti_context_id__isnull=True)
+                ).order_by('-created_at')[:limit]
+            )
+            return self._format_recommendations([(r, 'fallback', 0.30) for r in resources])
+        except Exception as e:
+            logger.error(f"Fallback also failed: {e}")
+            return [{'title': 'No hay recomendaciones disponibles', 'url': '#'}]
+
+
+# Singleton
+_engine_instance: Optional[RecommendationEngine] = None
 
 
 def get_recommendation_engine() -> RecommendationEngine:
-    """
-    Obtiene la instancia singleton del motor de recomendaciones.
-    
-    Returns:
-        Instancia de RecommendationEngine
-    """
-    global _recommendation_engine_instance
-    
-    if _recommendation_engine_instance is None:
-        _recommendation_engine_instance = RecommendationEngine()
-    
-    return _recommendation_engine_instance
+    """Singleton del motor de recomendaciones."""
+    global _engine_instance
+    if _engine_instance is None:
+        from django.conf import settings
+        config = getattr(settings, 'RECOMMENDATION_CONFIG', {})
+        _engine_instance = RecommendationEngine(
+            content_weight=config.get('CONTENT_WEIGHT', 0.5),
+            user_weight=config.get('USER_WEIGHT', 0.3),
+            popularity_weight=config.get('POPULARITY_WEIGHT', 0.2),
+        )
+    return _engine_instance

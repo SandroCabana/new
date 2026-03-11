@@ -8,9 +8,9 @@
 import os
 import django
 from itemadapter import ItemAdapter
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "lti_recommender_project.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "lti_recommender_project.settings_docker")
 django.setup()
-from recommender_app.models import EducationalResource
+from lti_recommender_project.apps.resources.models import EducationalResource
 class ScraperProjectPipeline:
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)

@@ -11,14 +11,20 @@ PyJWT==2.8.0
 # Database
 psycopg2-binary==2.9.9
 dj-database-url==2.1.0
+pgvector==0.3.2
 
-# Cache
+# Cache & Async
 redis==5.0.1
 hiredis==2.3.2
+django-redis==5.4.0
+celery[redis]==5.3.6
+django-celery-beat==2.6.0
+flower==2.0.1
 
-# Machine Learning - Updated for compatibility
-sentence-transformers==2.5.1
-torch==2.2.0
+# Machine Learning - CPU-only torch (~1GB vs ~6GB CUDA)
+--extra-index-url https://download.pytorch.org/whl/cpu
+sentence-transformers==2.7.0
+torch==2.2.0+cpu
 scikit-learn==1.4.0
 pandas==2.2.0
 numpy==1.26.3
@@ -26,6 +32,7 @@ scipy==1.12.0
 
 # Scraping
 scrapy==2.11.0
+scrapy-user-agents==0.1.1
 beautifulsoup4==4.12.3
 
 # Utils
