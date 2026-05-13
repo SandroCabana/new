@@ -1,30 +1,33 @@
 # LTI Moodle Recommender — Contexto del Proyecto
-> Última actualización: 2026-03-11
+> Última actualización: 2026-03-16 06:45 (Meticulous Context Restoration)
 
 ## Estado Actual ✅
 
-| Servicio | Estado | Puerto externo |
-|---|---|---|
-| **web** (Gunicorn/Django) | ✅ healthy | interno :8000 |
-| **nginx** | ✅ healthy | **:8080** → /admin, /api, /lti, /analytics |
-| **db** (PostgreSQL + pgvector) | ✅ healthy | :5432 |
-| **redis** | ✅ healthy | :6379 |
-| **celery_worker** | ✅ healthy | - |
-| **celery_beat** | ✅ healthy | - |
-| **LTI 1.3 Integration** | ✅ Configurado | Moodle ↔ Django OK |
+| Servicio | Estado | Puerto externo | Notas |
+|---|---|---|---|
+| **web** (Gunicorn/Django) | ✅ healthy | interno :8000 | Django 4.2.9 |
+| **nginx** | ✅ healthy | **:8080** | Proxy para /admin, /api, /lti, /analytics |
+| **db** (PostgreSQL + pgvector) | ✅ healthy | :5432 | pg15 + vector extension |
+| **redis** | ✅ healthy | :6379 | DB 0=Cache, 1=Celery Broker, 2=Celery Results |
+| **celery_worker** | ✅ healthy | - | Escucha colas: embeddings, ml_training, recommendations, scraping |
+| **celery_beat** | ✅ healthy | - | Scheduler basado en base de datos |
+| **LTI 1.3 Integration** | ✅ Funcional | Moodle ↔ Django OK |
 
 **URLs de acceso (vía Nginx):**  
 - **Admin Django:** `http://localhost:8080/admin/`  
 - **Visual Dashboard ML:** `http://localhost:8080/analytics/dashboard/visual/`
 - **LTI Launch URL:** `http://localhost:8080/lti/launch/`  
-**Usuario admin:** `admin` (credenciales en `.env` → `DJANGO_SUPERUSER_*`)
+- **xAPI Receiver:** `http://localhost:8080/api/interactions/xapi/receiver/`
 
-### Estado de datos
-| Dato | Cantidad |
-|---|---|
-| Recursos educativos en BD | **940** (233 arXiv Articles + 707 Kaggle Videos) |
-| Recursos con embedding | **100%** ✅ |
-| Datos de interacción | **✅ Importados** de Kaggle e-learning dataset |
+### Estado de datos (Verificado 16/Mar)
+| Dato | Cantidad | Notas |
+|---|---|---|
+| **Total Recursos** | **1075** | Almacenados en `EducationalResource` |
+| Recursos con embedding | **1075 (100%)** | Generados con `paraphrase-multilingual-mpnet-base-v2` |
+| **Kaggle (Cursos)** | 707 | Dataset inicial e-learning |
+| **arXiv (Papers EN)** | 268 | Scraping automatizado (CS/AI) |
+| **YouTube (Videos ES)** | 75 | Canales: Platzi, midudev, quantum, etc. |
+| **OpenAlex (Papers ES)** | 25 | Artículos académicos en español |
 
 ---
 
@@ -44,35 +47,41 @@ Hemos configurado una ruta en `nginx` (`/moodle-proxy/`) que reenvía la petici�
 
 ```
 lti_moodle_recomender/
-├── lti_recommender_project/       ← directorio de trabajo Docker
+├── lti_recommender_project/       ← Directorio de trabajo Docker
 │   ├── Dockerfile                 ← build multi-stage Python 3.11-slim
 │   ├── docker-compose.yml         ← orquestación de servicios
-│   ├── .env                       ← variables de entorno (NO commitear)
+│   ├── .env                       ← variables de entorno (Token xAPI, DB, etc.)
 │   ├── requirements.txt           ← dependencias Python
 │   ├── celery_app.py              ← ⚠️ RENOMBRADO de celery.py (circular import fix)
 │   ├── scripts/
 │   │   ├── docker-entrypoint.sh   ← init: migraciones, static, superuser, gunicorn
 │   │   └── generate-lti-keys.sh  ← genera claves RSA para LTI 1.3
 │   ├── nginx/
-│   │   └── conf.d/                ← configuración de virtual hosts
+│   │   └── conf.d/                ← configuración de virtual hosts (Proxy LTI)
 │   ├── apps/
-│   │   ├── recommendations/       ← motor de recomendación + tareas Celery
-│   │   │   └── services/embedding_service.py
-│   │   ├── interactions/          ← tracking de interacciones LTI
-│   │   ├── resources/             ← catálogo de recursos (tabla: recommender_app_educationalresource)
-│   │   ├── analytics/             ← evaluación de modelos
-│   │   └── users/                 ← usuarios LTI
-│   └── scraper/                   ← Scrapy scraper
-│       ├── scrapy.cfg             ← ⚠️ ejecutar scrapy desde ESTE directorio
+│   │   ├── recommendations/       ← Motor híbrido + Tareas ML (Ensemble)
+│   │   │   └── services/          ← Lógica de recomendación y embeddings
+│   │   ├── interactions/          ← Tracking LTI + xAPI (Moodle Stream)
+│   │   │   ├── xapi_views.py      ← Receptor de streams xAPI (LRS Parcial)
+│   │   │   └── tasks.py           ← Procesamiento asíncrono de eventos
+│   │   ├── resources/             ← Catálogo (HNSW Index en pgvector)
+│   │   ├── analytics/             ← Dashboards Visuales y evaluación
+│   │   └── users/                 ← Gestión de usuarios LTI
+│   └── scraper/                   ← Scrapy scraper (Multi-spider)
+│       ├── scrapy.cfg             ← Ejecutar scrapy desde ESTE directorio
 │       └── scraper_project/
 │           ├── settings.py        ← DJANGO_SETTINGS_MODULE=settings_docker
-│           ├── pipelines.py       ← guarda en lti_recommender_project.apps.resources.models
+│           ├── pipelines.py       ← Guarda en EducationalResource
 │           └── spiders/
-│               └── oer_spider.py  ← usa API de arXiv (OERCommons no tiene API pública)
-├── ml/                            ← modelos ML
+│               ├── oer_spider.py         ← API arXiv (Papers EN)
+│               ├── oercommons_spider.py  ← Web scraping OER Commons
+│               ├── openalex_es_spider.py ← API OpenAlex (Papers ES)
+│               └── youtube_edu_spider.py ← YouTube RSS (Videos ES)
+├── ml/                            ← Modelos de Machine Learning (Core)
 │   └── models/
-│       ├── ensemble.py, neural_cf.py, sequential_rec.py
-└── browser_extension/             ← extensión Chrome para tracking
+│       ├── ensemble.py            ← Combinador (SVD, NCF, Sequential, FM, Hybrid)
+│       └── neural_cf.py, fm.py, sequential_rec.py
+└── browser_extension/             ← Extensión Chrome (Tracking Externo)
 ```
 
 ---
@@ -80,150 +89,79 @@ lti_moodle_recomender/
 ## Arquitectura Docker
 
 ### Dockerfile (multi-stage)
-- **Stage 1 (builder):** Instala dependencias con pip en `/root/.local`
-- **Stage 2 (runtime):** Copia packages a `/home/django/.local` (usuario no-root)
+- **Stage 1 (builder):** Instala dependencias con pip en `/root/.local` utilizando `torch` CPU-only para ahorrar espacio.
+- **Stage 2 (runtime):** Copia packages a `/home/django/.local` (usuario no-root por seguridad).
 
 **Rutas críticas dentro del contenedor:**
 ```
-/srv/lti_recommender_project/  ← código fuente (PYTHONPATH=/srv)
-/app/staticfiles/               ← archivos estáticos (volumen)
-/app/logs/                      ← logs (volumen nombrado)
-/app/keys/                      ← LTI RSA keys (volumen nombrado)
-/home/django/.local/            ← paquetes pip instalados
+/srv/lti_recommender_project/  ← Código fuente (PYTHONPATH=/srv)
+/app/staticfiles/               ← Archivos estáticos colectados
+/app/logs/                      ← Logs de la aplicación
+/app/keys/                      ← Claves RSA para LTI 1.3
 ```
 
 ### Tabla de BD real
-El modelo `EducationalResource` usa `db_table = 'recommender_app_educationalresource'` (nombre legado). La app actual se llama `resources` pero la tabla mantiene el nombre original.
+El modelo `EducationalResource` utiliza `db_table = 'recommender_app_educationalresource'`. Esta tabla cuenta con una columna `embedding` de tipo `vector(768)` optimizada con un índice **HNSW**.
 
 ---
 
-## Decisiones Técnicas Importantes
+## Decisiones Técnicas e Infraestructura
 
-### 1. `celery.py` → `celery_app.py` (CRÍTICO)
-Shadowing del paquete `celery` instalado causaba circular import.  
-Celery se invoca con: `celery -A lti_recommender_project.celery_app worker/beat`
+### 1. Vector Search (pgvector + HNSW)
+Búsquedas de similitud coseno ultrarrápidas:
+- **Index:** `pgvector.django.indexes.HnswIndex`
+- **Config:** `m=16`, `ef_construction=64`, `opclasses=['vector_cosine_ops']`
 
-### 2. torch CPU-only (imagen ~2.5GB en vez de ~8GB)
-```txt
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.2.0+cpu
-```
+### 2. Integración xAPI (Real-time tracking)
+- **Mecanismo:** Webhook asíncrono desde Moodle (`logstore_xapi`).
+- **Deduplicación:** Verificación de `statement_id` en metadata para evitar duplicados.
+- **Mapeo:** Verbos traducidos a pesos (View=1.0, Attempt=2.0, Complete=5.0).
+- **Auto-Ingesta:** Descubrimiento automático de actividades de Moodle no catalogadas.
 
-### 3. Nginx en puerto 8080 (no 80)
-Apache/PHP (Moodle nativo en WSL) ocupa el puerto 80 del host.
-
-### 4. Rutas Celery — queues (CRÍTICO)
-El worker escucha colas específicas. Los tasks deben especificar `queue=`:
-```python
-# En @shared_task decorators:
-update_embeddings_incremental → queue='embeddings'
-retrain_all_models            → queue='ml_training'
-precompute_active_users       → queue='recommendations'
-run_scraper_task              → queue='scraping'
-
-# Al despachar manualmente:
-task.apply_async(queue='embeddings')
-```
-⚠️ Si se usa `.delay()` sin queue, va al queue `celery` (default) que el worker **no escucha**.
-
-### 5. Scraper — fuente de datos
-OERCommons no tiene API pública. El spider `oer` usa la **API de arXiv**:
-```
-http://export.arxiv.org/api/query?search_query=cat:cs.AI&max_results=50
-```
-Categorías: `cs.AI`, `cs.LG`, `cs.CV`, `cs.CL`, `cs.SE` → ~250 recursos por crawl.
-
-Para ejecutar el scraper manualmente:
-```bash
-docker exec -it lti_recommender_web bash -c "cd /srv/lti_recommender_project/scraper && scrapy crawl oer"
-```
-
-### 6. Migraciones - Nota importante
-La migración `0004` convierte la columna `embedding` de `jsonb` → `vector(768)`.
-PostgreSQL no puede hacer este cast directamente, por eso la migración usa `RemoveField` + `AddField` en vez de `AlterField`. Los embeddings previos se pierden pero se regeneran con la tarea Celery.
+### 3. Ensemble Weights (Actuales)
+Combinación ponderada de modelos:
+- **Hybrid (Semántico):** 0.25 (Pilar de cold-start)
+- **Sequential:** 0.25 (Pattern capture)
+- **Neural CF / FM:** 0.20 c/u (Deep Collaborative)
+- **SVD:** 0.10 (Matrix Factorization)
 
 ---
 
-## Variables de Entorno Clave (.env)
-
-```env
-DJANGO_SETTINGS_MODULE=lti_recommender_project.settings_docker
-SECRET_KEY=django-insecure-local-dev-key-change-in-production-abc123xyz789
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
-CSRF_TRUSTED_ORIGINS=http://localhost,http://127.0.0.1,http://localhost:8080,http://127.0.0.1:8080
-SESSION_COOKIE_SAMESITE=Lax
-CSRF_COOKIE_SAMESITE=Lax
-DB_NAME=lti_recommender_db / DB_USER=lti_user / DB_HOST=db
-REDIS_URL=redis://redis:6379/0 / CELERY_BROKER_URL=redis://redis:6379/1
-ML_EMBEDDING_MODEL=paraphrase-multilingual-mpnet-base-v2
-LTI_CLIENT_ID=local-dev-placeholder  # ← completar con Moodle real
-```
-
----
-
-## Comandos Frecuentes
+## Comandos Frecuentes y Mantenimiento
 
 ```bash
-# Poblar BD con recursos educativos (arXiv)
-docker exec -it lti_recommender_web bash -c "cd /srv/lti_recommender_project/scraper && scrapy crawl oer"
+# Verificar colas Celery
+for q in celery embeddings ml_training recommendations scraping; do 
+  echo -n "$q: "; docker exec lti_recommender_redis redis-cli -n 1 LLEN $q; 
+done
 
-# Generar embeddings para recursos nuevos
-docker exec -it lti_recommender_web python manage.py shell -c "
-from lti_recommender_project.apps.recommendations.tasks import update_embeddings_incremental
-update_embeddings_incremental.apply_async(queue='embeddings')
-"
+# Scraping Manual
+docker exec -it lti_recommender_web bash -c "cd scraper && scrapy crawl youtube_edu"
 
-# Verificar estado de datos
-docker exec -it lti_recommender_web python manage.py shell -c "
-from lti_recommender_project.apps.resources.models import EducationalResource
-print('Total:', EducationalResource.objects.count())
-print('Con embedding:', EducationalResource.objects.exclude(embedding=None).count())
-"
-
-# Migraciones
-docker exec -it lti_recommender_web python manage.py makemigrations
-docker exec -it lti_recommender_web python manage.py migrate
-
-# Ver logs worker
-docker compose logs -f celery_worker
-
-# Reiniciar servicio
-docker compose restart web
-docker compose up -d --force-recreate web celery_worker celery_beat
-
-# Rebuild (después de cambios en requirements.txt o Dockerfile)
-docker compose build web
-docker compose up -d --force-recreate web celery_worker celery_beat
+# Re-entrenamiento total
+docker exec -it lti_recommender_web python manage.py shell -c "from apps.recommendations.tasks import retrain_all_models; retrain_all_models.delay()"
 ```
 
 ---
 
-## Pendientes / Issues Conocidos
+## Issues Resueltos Recientemente (Marzo 2026)
 
-| Issue | Severidad | Descripción |
-|---|---|---|
-| LTI no configurado en prod | Alta | Requiere registrar la herramienta en Moodle de producción y configurar `.env` (Actualmente en localhost OK) |
-| `scrapy-user-agents` | Baja | Middleware comentado; añadido a requirements.txt para próximo rebuild |
-
-**Issues Resueltos Recientemente (Marzo 2026):**
-- ✅ `scikit-surprise` agregado (Modelo SVD funcional)
-- ✅ Importación y retención de test sets de `SequentialRecommendationModel`
-- ✅ Importados datos de interacciones del Kaggle e-learning dataset (Colaborativos funcionales)
-- ✅ Dashboard Visual Analítico en `/analytics/dashboard/visual/` para testear reentrenamientos.
+- ✅ **Fix 502 Bad Gateway:** Corregido `NameError: name 'path' is not defined` en `interactions/urls.py`.
+- ✅ **Celery Resource Peak:** Optimización de workers y purga de colas tras restart.
+- ✅ **xAPI Implementation:** Recepción y procesamiento de Moodle Logs funcional.
+- ✅ **Boolean Check Fix:** Corregido `ValueError` en `resource.embedding` usando `.any()`/`.all()`.
 
 ---
 
-## Stack Tecnológico
+## Stack Tecnológico 🛠️
 
 | Capa | Tecnología |
 |---|---|
-| Backend | Django 4.2.9, DRF 3.14 |
-| Base de datos | PostgreSQL 15 + pgvector 0.3.2 |
-| Cache/Queue | Redis 7, Celery 5.3.6 |
-| ML | sentence-transformers 2.7, torch 2.2 CPU, scikit-learn 1.4 |
-| Web server | Gunicorn 21.2 + Nginx (alpine) |
-| LTI | PyLTI1p3 2.0 (LTI 1.3) |
-| Embeddings | paraphrase-multilingual-mpnet-base-v2 (768 dims, multilingual) |
-| Scraping | Scrapy 2.11.0 + arXiv API |
-| Entorno | Docker Desktop + WSL2 (Linux/Windows) |
+| **Backend** | Django 4.2.9, DRF 3.14 |
+| **BBDD** | PostgreSQL 15 + pgvector (HNSW Index) |
+| ML Models | `sentence-transformers 2.7.0` (SBERT), PyTorch (CPU), scikit-surprise |
+| **Task Engine** | Redis 7 + Celery 5.3 (Multiple queues) |
+| **Web Infrastructure** | Gunicorn + Nginx (Proxy SameSite friendly) |
+| **Scraping** | `Scrapy 2.11.0`, `BeautifulSoup4 4.12.3`, `scrapy-user-agents 0.1.1` |
+| **Entorno** | Docker Desktop + WSL2 (Linux/Windows) |
+| **Standards** | LTI 1.3, xAPI (IEEE 9274.1.1) |

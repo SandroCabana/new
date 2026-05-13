@@ -4,11 +4,13 @@ Actualiza automáticamente los perfiles basándose en interacciones.
 """
 
 import logging
-from typing import Optional, Dict
+from typing import Optional, Dict, Tuple
 from collections import Counter
 from django.db.models import Avg, Count
+from django.contrib.auth import get_user_model
 
 logger = logging.getLogger(__name__)
+User = get_user_model()
 
 
 class UserProfileService:
@@ -18,185 +20,159 @@ class UserProfileService:
     """
     
     @staticmethod
-    def get_or_create_profile(lti_user_id: str, launch_data: Dict = None):
+    def get_or_create_profile(sub: str, issuer: str, launch_data: Dict = None):
         """
-        Obtiene o crea un perfil de usuario.
+        Obtiene o crea un perfil de usuario (GlobalUser + LTIIdentity).
+        """
+        from lti_recommender_project.apps.users.models import GlobalUser, LTIIdentity
         
-        Args:
-            lti_user_id: ID único del usuario LTI
-            launch_data: Datos del lanzamiento LTI (opcional)
+        email = launch_data.get('email', '') if launch_data else ''
+        name = launch_data.get('name', '') if launch_data else ''
+        role = launch_data.get('role', 'Learner') if launch_data else 'Learner'
+        
+        # Primero intentar encontrar GlobalUser por email
+        global_user = None
+        if email:
+            global_user = GlobalUser.objects.filter(email__iexact=email).first()
             
-        Returns:
-            Instancia de UserProfile
-        """
-        from lti_recommender_project.apps.users.models import UserProfile
+        if not global_user:
+            # Intentar encontrar por LTIIdentity existente
+            identity = LTIIdentity.objects.filter(sub=sub, issuer=issuer).first()
+            if identity:
+                global_user = identity.global_user
         
-        defaults = {}
-        
-        if launch_data:
-            defaults['display_name'] = launch_data.get('name', '')
-            defaults['email'] = launch_data.get('email', '')
-        
-        profile, created = UserProfile.objects.get_or_create(
-            lti_user_id=lti_user_id,
-            defaults=defaults
+        if not global_user:
+            # Create a new GlobalUser
+            global_user = GlobalUser.objects.create(
+                email=email,
+                display_name=name
+            )
+            logger.info(f"Nuevo GlobalUser creado: {global_user.id}")
+            
+        # Get or create LTIIdentity
+        identity, created = LTIIdentity.objects.get_or_create(
+            issuer=issuer,
+            sub=sub,
+            defaults={
+                'global_user': global_user,
+                'role': role
+            }
         )
         
         if created:
-            logger.info(f"Nuevo perfil creado para usuario {lti_user_id}")
-        
-        return profile
+            logger.info(f"Nueva LTIIdentity creada para {sub} @ {issuer}")
+            
+        return global_user
     
     @staticmethod
-    def update_profile_from_interaction(user_id: str, interaction):
+    def update_profile_from_interaction(global_user_id, interaction):
         """
         Actualiza el perfil de usuario después de una interacción.
-        
-        Args:
-            user_id: ID del usuario
-            interaction: Instancia de UserInteraction
         """
-        from lti_recommender_project.apps.users.models import UserProfile
+        from lti_recommender_project.apps.users.models import GlobalUser
         
         try:
-            profile = UserProfile.objects.get(lti_user_id=user_id)
+            profile = GlobalUser.objects.get(id=global_user_id)
             
-            # Actualizar contador de interacciones
             profile.total_interactions += 1
-            
-            # Actualizar tipos de recursos preferidos
             UserProfileService._update_preferred_types(profile, interaction.resource)
-            
-            # Actualizar tags de interés
             UserProfileService._update_interest_tags(profile, interaction.resource)
-            
-            # Actualizar promedio de completitud
-            UserProfileService._update_average_completion(profile, user_id)
-            
-            # Actualizar promedio de ratings
-            UserProfileService._update_average_rating(profile, user_id)
-            
-            # Inferir nivel del usuario
-            UserProfileService._infer_user_level(profile, user_id)
+            UserProfileService._update_average_completion(profile, global_user_id)
+            UserProfileService._update_average_rating(profile, global_user_id)
+            UserProfileService._infer_user_level(profile, global_user_id)
             
             profile.save()
-            logger.info(f"Perfil actualizado para usuario {user_id}")
             
-        except UserProfile.DoesNotExist:
-            logger.warning(f"Perfil no encontrado para usuario {user_id}")
+        except GlobalUser.DoesNotExist:
+            pass
     
     @staticmethod
     def _update_preferred_types(profile, resource):
-        """Actualiza los tipos de recursos preferidos."""
         if not resource.resource_type:
             return
         
-        if not profile.preferred_resource_types:
-            profile.preferred_resource_types = {}
+        if not profile.preferences_json:
+            profile.preferences_json = {}
         
         resource_type = resource.resource_type
-        current_count = profile.preferred_resource_types.get(resource_type, 0)
-        profile.preferred_resource_types[resource_type] = current_count + 1
+        current_count = profile.preferences_json.get(resource_type, 0)
+        profile.preferences_json[resource_type] = current_count + 1
     
     @staticmethod
     def _update_interest_tags(profile, resource):
-        """Actualiza los tags de interés del usuario."""
         if not resource.tags:
             return
         
-        # Obtener tags actuales del perfil
         if profile.interest_tags:
             current_tags = [tag.strip() for tag in profile.interest_tags.split(',')]
         else:
             current_tags = []
         
-        # Agregar nuevos tags del recurso
         new_tags = [tag.strip() for tag in resource.tags.split(',')]
         all_tags = current_tags + new_tags
         
-        # Contar frecuencia y mantener los top 20 tags
         tag_counter = Counter(all_tags)
         top_tags = [tag for tag, _ in tag_counter.most_common(20)]
-        
         profile.interest_tags = ', '.join(top_tags)
     
     @staticmethod
-    def _update_average_completion(profile, user_id: str):
-        """Actualiza el promedio de completitud del usuario."""
+    def _update_average_completion(profile, global_user_id):
         from lti_recommender_project.apps.interactions.models import UserInteraction
         
         avg_completion = UserInteraction.objects.filter(
-            lti_user_id=user_id,
+            global_user_id=global_user_id,
             completion_percentage__isnull=False
-        ).aggregate(
-            avg=Avg('completion_percentage')
-        )['avg']
+        ).aggregate(avg=Avg('completion_percentage'))['avg']
         
         if avg_completion is not None:
             profile.average_completion = avg_completion
     
     @staticmethod
-    def _update_average_rating(profile, user_id: str):
-        """Actualiza el promedio de ratings del usuario."""
+    def _update_average_rating(profile, global_user_id):
         from lti_recommender_project.apps.interactions.models import UserInteraction
         
         avg_rating = UserInteraction.objects.filter(
-            lti_user_id=user_id,
+            global_user_id=global_user_id,
             rating__isnull=False
-        ).aggregate(
-            avg=Avg('rating')
-        )['avg']
+        ).aggregate(avg=Avg('rating'))['avg']
         
         if avg_rating is not None:
             profile.average_rating = avg_rating
     
     @staticmethod
-    def _infer_user_level(profile, user_id: str):
-        """
-        Infiere el nivel del usuario basándose en sus interacciones.
-        """
+    def _infer_user_level(profile, global_user_id):
         from lti_recommender_project.apps.interactions.models import UserInteraction
         
-        # Obtener recursos con los que ha interactuado y su nivel de dificultad
         interactions = UserInteraction.objects.filter(
-            lti_user_id=user_id,
+            global_user_id=global_user_id,
             resource__difficulty_level__isnull=False
         ).select_related('resource')
         
         if not interactions.exists():
-            # Sin suficientes datos, mantener como beginner
             return
-        
-        # Contar interacciones por nivel de dificultad
+            
         level_counter = Counter()
         high_completion_levels = Counter()
         
         for interaction in interactions:
             level = interaction.resource.difficulty_level
             level_counter[level] += 1
-            
-            # Dar más peso a recursos completados exitosamente
             if interaction.completion_percentage and interaction.completion_percentage >= 70:
                 high_completion_levels[level] += 2
-        
-        # Combinar contadores
+                
         for level, count in high_completion_levels.items():
             level_counter[level] += count
-        
-        # Inferir nivel basándose en el patrón
+            
         total = sum(level_counter.values())
         if total < 5:
-            # Pocos datos, mantener nivel actual o beginner
             if not profile.inferred_level:
                 profile.inferred_level = 'beginner'
             return
-        
-        # Calcular proporciones
+            
         beginner_ratio = level_counter.get('beginner', 0) / total
         intermediate_ratio = level_counter.get('intermediate', 0) / total
         advanced_ratio = level_counter.get('advanced', 0) / total
         
-        # Lógica de inferencia
         if advanced_ratio > 0.4 or (intermediate_ratio > 0.3 and advanced_ratio > 0.2):
             profile.inferred_level = 'advanced'
         elif intermediate_ratio > 0.4 or (beginner_ratio < 0.5 and intermediate_ratio > 0.2):
@@ -205,47 +181,51 @@ class UserProfileService:
             profile.inferred_level = 'beginner'
     
     @staticmethod
-    def infer_user_level(user_id: str) -> str:
-        """
-        Infiere y retorna el nivel del usuario.
-        
-        Args:
-            user_id: ID del usuario
-            
-        Returns:
-            Nivel inferido ('beginner', 'intermediate', 'advanced')
-        """
-        from lti_recommender_project.apps.users.models import UserProfile
-        
+    def infer_user_level(global_user_id) -> str:
+        from lti_recommender_project.apps.users.models import GlobalUser
         try:
-            profile = UserProfile.objects.get(lti_user_id=user_id)
-            UserProfileService._infer_user_level(profile, user_id)
+            profile = GlobalUser.objects.get(id=global_user_id)
+            UserProfileService._infer_user_level(profile, global_user_id)
             profile.save()
             return profile.inferred_level
-        except UserProfile.DoesNotExist:
+        except GlobalUser.DoesNotExist:
             return 'beginner'
-    
+
     @staticmethod
-    def extract_user_interests(user_id: str) -> str:
+    def generate_jwt_tokens_for_global_user(global_user_id: str, context_id: str = None) -> Dict[str, str]:
         """
-        Extrae y retorna los tags de interés del usuario.
+        Generates SimpleJWT tokens for a GlobalUser using a proxy Django User.
+        Injects the global_user_id and context_id into the token.
+        """
+        from rest_framework_simplejwt.tokens import RefreshToken
         
-        Args:
-            user_id: ID del usuario
+        # Get or create proxy user
+        proxy_user, _ = User.objects.get_or_create(
+            username=str(global_user_id),
+            defaults={
+                'is_active': True,
+                'email': f"{global_user_id}@lti-proxy.local"
+            }
+        )
+        
+        refresh = RefreshToken.for_user(proxy_user)
+        
+        # Inject custom claims
+        refresh['global_user_id'] = str(global_user_id)
+        if context_id:
+            refresh['context_id'] = context_id
             
-        Returns:
-            String de tags separados por comas
-        """
-        from lti_recommender_project.apps.users.models import UserProfile
-        
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }
+    def extract_user_interests(global_user_id) -> str:
+        from lti_recommender_project.apps.users.models import GlobalUser
         try:
-            profile = UserProfile.objects.get(lti_user_id=user_id)
-            return profile.interest_tags or  ""
-        except UserProfile.DoesNotExist:
+            profile = GlobalUser.objects.get(id=global_user_id)
+            return profile.interest_tags or ""
+        except GlobalUser.DoesNotExist:
             return ""
 
-
-# Función de conveniencia para obtener el servicio
 def get_user_profile_service() -> UserProfileService:
-    """Retorna una instancia del servicio de perfil de usuario."""
     return UserProfileService()

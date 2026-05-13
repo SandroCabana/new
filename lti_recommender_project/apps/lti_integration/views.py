@@ -85,9 +85,42 @@ def lti_launch(request):
         user_id = claims['user_id']
         context_id = claims['context_id']
 
+        # --- Sync LTIContext ---
+        from lti_recommender_project.apps.lti_integration.models import LTIContext
+        lti_context, _ = LTIContext.objects.update_or_create(
+            context_id=context_id,
+            defaults={'title': claims['context_title']}
+        )
+
         # --- Build enriched StudentProfile ---
         from lti_recommender_project.apps.users.student_profile import StudentProfile
         profile = StudentProfile.from_lti_launch(launch_data)
+
+        # --- Link Context to LTIIdentity ---
+        from lti_recommender_project.apps.users.services.user_profile_service import UserProfileService
+        
+        launch_info = {
+            'email': claims.get('email', ''),
+            'name': claims.get('name', ''),
+            'role': claims['roles'][0] if claims.get('roles') else 'Learner'
+        }
+        
+        global_user = UserProfileService.get_or_create_profile(
+            sub=user_id,
+            issuer=claims.get('issuer', 'unknown_issuer'),
+            launch_data=launch_info
+        )
+        
+        # Link context
+        from lti_recommender_project.apps.users.models import LTIIdentity
+        identity = LTIIdentity.objects.filter(sub=user_id, issuer=claims.get('issuer', 'unknown_issuer')).first()
+        if identity:
+            identity.contexts.add(lti_context)
+            # Update role and platform if not set
+            if not identity.platform_id and claims.get('platform_guid'):
+                identity.platform_id = claims['platform_guid']
+                identity.save(update_fields=['platform_id'])
+
 
         # --- Get recommendations (cache-aside) ---
         recommendations = get_recommendations_cached(user_id, context_id, profile)
@@ -100,9 +133,16 @@ def lti_launch(request):
             is_instructor=claims['is_instructor'],
         )
 
+        # --- Tokens for Extension Pairing ---
+        jwt_tokens = UserProfileService.generate_jwt_tokens_for_global_user(
+            global_user_id=global_user.id,
+            context_id=context_id
+        )
+
         context = {
             # Identity
             'user_id': user_id,
+            'global_user_id': str(global_user.id),
             'user_name': claims['name'],
             'user_email': claims['email'],
             # Context
@@ -117,8 +157,10 @@ def lti_launch(request):
             # Recommendations
             'recommendations': recommendations,
             'profile': profile,
+            # Tokens
+            'extension_tokens': jwt_tokens,
             # A/B test variant
-            'ab_variant': _get_ab_variant(user_id),
+            'ab_variant': _get_ab_variant(str(global_user.id)),
             # Debug (solo en DEBUG=True)
             'raw_lti_data': json.dumps(launch_data, indent=2, ensure_ascii=False) if settings.DEBUG else None,
         }

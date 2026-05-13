@@ -46,8 +46,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 updateActiveTabMetadata(message.data);
             }
             break;
+
+        case 'ltiPairingReceived':
+            // Auto-pairing from Moodle LTI dashboard via window.postMessage
+            handleLtiPairing(message);
+            break;
     }
-    return true;
 });
 
 // ===== Tab Tracking =====
@@ -135,6 +139,37 @@ function isTrackableUrl(url) {
     return true;
 }
 
+// ===== LTI Auto-Pairing Handler =====
+async function handleLtiPairing({ tokens, user, context_id }) {
+    try {
+        await chrome.storage.local.set({
+            // JWT tokens
+            jwtAccess: tokens.access,
+            jwtRefresh: tokens.refresh,
+            // Fallback: keep authToken pointing to the access token so
+            // existing fetch calls that read authToken still work temporarily
+            authToken: tokens.access,
+            // User identity
+            globalUserId: user?.global_user_id || '',
+            userName: user?.name || '',
+            userEmail: user?.email || '',
+            // Context
+            contextId: context_id || '',
+            // Flag so popup knows this session was auto-paired
+            ltiPaired: true,
+        });
+
+        console.log('[LTI Tracker] Pairing stored. GlobalUser:', user?.global_user_id);
+
+        // Notify popup (if open) so it can update the UI
+        chrome.runtime.sendMessage({ action: 'ltiPairingStored', user, context_id })
+            .catch(() => { /* popup may be closed, ignore */ });
+
+    } catch (err) {
+        console.error('[LTI Tracker] Error storing pairing:', err);
+    }
+}
+
 // ===== Page Data Handling =====
 function updateActiveTabMetadata(metadata) {
     if (activeTab) {
@@ -142,6 +177,9 @@ function updateActiveTabMetadata(metadata) {
         activeTab.keywords = metadata.keywords || [];
         activeTab.description = metadata.description || '';
         activeTab.type = metadata.type || 'webpage';
+        activeTab.contentSummary = metadata.contentSummary || '';
+        activeTab.engagement = metadata.engagement || { scroll_depth: 0, active_time: 0 };
+        activeTab.videoData = metadata.videoData || null;
     }
 }
 
@@ -157,10 +195,15 @@ async function savePageData(tab, startTime) {
         startTime: startTime,
         endTime: Date.now(),
         timeSpent: timeSpent,
+        activeTime: tab.engagement?.active_time || timeSpent,
+        scrollDepth: tab.engagement?.scroll_depth || 0,
+        contentSummary: tab.contentSummary || '',
+        videoData: tab.videoData || null,
         keywords: tab.keywords || [],
         type: tab.type || 'webpage',
         domains: [new URL(tab.url).hostname],
     };
+
 
     // Add to pending data
     const storage = await chrome.storage.local.get(['pendingData']);

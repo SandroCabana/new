@@ -1,5 +1,23 @@
 from django.db import models
 
+
+class LTIContext(models.Model):
+    """
+    Almacena información sobre los cursos/contextos LTI registrados.
+    """
+    context_id = models.CharField(max_length=255, unique=True, help_text="ID único del contexto LTI.")
+    title = models.CharField(max_length=255, help_text="Nombre del curso o contexto.")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = "Contexto LTI"
+        verbose_name_plural = "Contextos LTI"
+
+
 class EducationalResource(models.Model):
     """
     Representa un recurso educativo que puede ser recomendado.

@@ -35,6 +35,18 @@ class RecommendationEngine:
             self.user_weight = 0.3
             self.popularity_weight = 0.2
 
+    def _safe_list(self, results: Any, name: str, user_id: str) -> List:
+        """Valida que el retorno de un modelo sea una lista y no None."""
+        if results is None:
+            logger.warning(f"Model {name} returned None for user {user_id}. Using empty list.")
+            return []
+        if not isinstance(results, list):
+            logger.error(f"Model {name} returned {type(results)} instead of list for user {user_id}")
+            return []
+        
+        logger.info(f"Model {name}: {len(results)} results for user {user_id}")
+        return results
+
     def get_recommendations(
         self,
         user_id: str,
@@ -75,14 +87,17 @@ class RecommendationEngine:
             collaborative_recs = self._collaborative_filtering(
                 user_id, context_id, viewed_ids, limit * 2
             )
+            collaborative_recs = self._safe_list(collaborative_recs, "Collaborative", user_id)
 
             # --- Strategy 2: Content-Based (Semantic Embeddings) ---
             content_recs = self._content_based_semantic(
                 user_id, context_id, viewed_ids, limit * 2
             )
+            content_recs = self._safe_list(content_recs, "ContentSemantic", user_id)
 
             # --- Strategy 3: Popular in Context ---
             popular_recs = self._popular_in_context(context_id, viewed_ids, limit * 2)
+            popular_recs = self._safe_list(popular_recs, "Popular", user_id)
 
             # Combine with dynamic weights
             combined = self._combine_recommendations(
@@ -92,11 +107,24 @@ class RecommendationEngine:
                 weights=weights,
                 limit=limit,
             )
+            
+            if combined is None:
+                logger.error(f"Combination logic returned None for user {user_id}. Fixing with empty list.")
+                combined = []
+
+            logger.info(f"Combined recommendations: {len(combined)} for user {user_id}")
 
             # Fill to limit if needed
             if len(combined) < limit:
-                generic = self._get_generic_resources(viewed_ids, limit - len(combined))
-                combined.extend(generic)
+                needed = limit - len(combined)
+                logger.info(f"Filling {needed} recommendations with fallback for user {user_id}")
+                generic = self._get_generic_resources(viewed_ids, needed)
+                combined.extend(self._safe_list(generic, "GenericFallback", user_id))
+
+            # Final check - if still empty, use popular fallback
+            if not combined:
+                logger.warning(f"No recommendations found for user {user_id}. Using absolute fallback.")
+                combined = self._get_fallback_recommendations(context_id, limit)
 
             return self._format_recommendations(combined[:limit])
 
@@ -356,6 +384,11 @@ class RecommendationEngine:
         combined = []
         seen_ids = set()
 
+        # Ensure inputs are lists
+        collaborative = collaborative if isinstance(collaborative, list) else []
+        content = content if isinstance(content, list) else []
+        popular = popular if isinstance(popular, list) else []
+
         sources_and_weights = [
             (collaborative, weights.get('collaborative', 0.30)),
             (content, weights.get('content', 0.35)),
@@ -384,6 +417,8 @@ class RecommendationEngine:
                     if rid and rid not in seen_ids:
                         combined.append((r, src, score))
                         seen_ids.add(rid)
+
+        return combined
 
     def _format_recommendations(self, resources: List[tuple]) -> List[Dict[str, Any]]:
         """Formatea recursos al formato de respuesta estándar y normaliza scores de 0 a 1."""

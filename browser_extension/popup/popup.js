@@ -6,6 +6,7 @@
 // ===== State Management =====
 let isTracking = false;
 let pendingData = [];
+let sessionTimer = null;
 
 // ===== DOM Elements =====
 const elements = {
@@ -35,16 +36,43 @@ const elements = {
     totalTime: document.getElementById('total-time'),
     historyList: document.getElementById('history-list'),
 
-    // Settings panel
+    // Tracking Views
+    welcomeView: document.getElementById('welcome-view'),
+    trackingView: document.getElementById('tracking-view'),
+
+    // Settings
+    connectionCard: document.getElementById('connection-status-card'),
+    connTitle: document.getElementById('conn-title'),
+    connDesc: document.getElementById('conn-desc'),
+    userInfoCard: document.getElementById('user-info'),
+    userEmailDisplay: document.getElementById('user-email-display'),
+    courseSelectorGroup: document.getElementById('course-selector-group'),
+    toggleAdvanced: document.getElementById('toggle-advanced'),
+    advancedContent: document.getElementById('advanced-content'),
+
     apiUrl: document.getElementById('api-url'),
     contextId: document.getElementById('context-id'),
+    contextSelector: document.getElementById('context-selector'),
+    contextIdContainer: document.getElementById('context-id-container'),
+
     // Login form
     loginForm: document.getElementById('login-form'),
     loginEmail: document.getElementById('login-email'),
     loginPassword: document.getElementById('login-password'),
     loginBtn: document.getElementById('login-btn'),
     loginError: document.getElementById('login-error'),
-    userInfo: document.getElementById('user-info'),
+    showRegister: document.getElementById('show-register'),
+
+    // Register form
+    registerForm: document.getElementById('register-form'),
+    regUsername: document.getElementById('reg-username'),
+    regEmail: document.getElementById('reg-email'),
+    regPassword: document.getElementById('reg-password'),
+    registerBtn: document.getElementById('register-btn'),
+    registerError: document.getElementById('register-error'),
+    showLogin: document.getElementById('show-login'),
+
+    authSection: document.getElementById('auth-section'),
     userName: document.getElementById('user-name'),
     disconnect: document.getElementById('disconnect'),
     saveSettings: document.getElementById('save-settings'),
@@ -59,6 +87,7 @@ const elements = {
     confirmSend: document.getElementById('confirm-send'),
 };
 
+
 // ===== Initialization =====
 document.addEventListener('DOMContentLoaded', init);
 
@@ -71,20 +100,153 @@ async function init() {
 
     // Setup event listeners
     setupEventListeners();
+
+    // Listen for storage changes to update UI in real-time
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local' && (changes.pendingData || changes.isTracking || changes.sessionStartTime)) {
+            loadState();
+        }
+    });
 }
 
 async function loadSettings() {
-    const settings = await chrome.storage.local.get(['apiUrl', 'contextId', 'authToken', 'userName']);
+    const results = await chrome.storage.local.get([
+        'apiUrl', 'contextId', 'isTracking', 'authToken',
+        'jwtAccess', 'userName', 'ltiPaired'
+    ]);
 
-    if (settings.apiUrl) {
-        elements.apiUrl.value = settings.apiUrl;
+    if (results.apiUrl) {
+        elements.apiUrl.value = results.apiUrl;
+    } else {
+        elements.apiUrl.value = 'http://localhost:8080';
     }
-    if (settings.contextId) {
-        elements.contextId.value = settings.contextId;
+
+    if (results.contextId) {
+        elements.contextId.value = results.contextId;
     }
-    if (settings.authToken && settings.userName) {
-        showUserConnected(settings.userName);
+
+    // Support both legacy Token auth and new JWT auto-pairing
+    const hasAuth = results.jwtAccess || results.authToken;
+    if (hasAuth) {
+        showUserConnected(results.userName, results.userEmail);
+        updateConnectionStatus(true, results.userName);
+        
+        if (results.ltiPaired) {
+            // Indicate auto-pairing success
+            const nameEl = elements.userName;
+            if (nameEl && !nameEl.textContent.includes('🔗')) {
+                nameEl.textContent = '🔗 ' + (results.userName || 'LTI Usuario');
+            }
+        }
+        loadUserContexts();
+    } else {
+        showUserDisconnected();
+        updateConnectionStatus(false);
     }
+}
+
+// ===== API Helpers =====
+async function getAuthSettings() {
+    const settings = await chrome.storage.local.get(['authToken', 'jwtAccess', 'apiUrl', 'contextId']);
+    const token = settings.jwtAccess || settings.authToken;
+    
+    if (!token) return null;
+    
+    // JWT tokens contain dots, legacy tokens don't
+    const scheme = token.includes('.') ? 'Bearer' : 'Token';
+    
+    return {
+        apiUrl: settings.apiUrl || 'http://localhost:8080',
+        token: token,
+        authHeader: `${scheme} ${token}`,
+        contextId: settings.contextId
+    };
+}
+
+async function loadUserContexts() {
+    const settings = await getAuthSettings();
+    if (!settings) return;
+
+    try {
+        const response = await fetch(`${settings.apiUrl}/auth/user-contexts/`, {
+            headers: { 'Authorization': settings.authHeader }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const selector = elements.contextSelector;
+            
+            // Clear existing options except first
+            selector.innerHTML = '<option value="">-- Selecciona un curso --</option>';
+            
+            if (data.contexts && data.contexts.length > 0) {
+                // ... (populate options)
+                data.contexts.forEach(ctx => {
+                    const option = document.createElement('option');
+                    option.value = ctx.context_id;
+                    option.textContent = ctx.title || ctx.context_id;
+                    if (ctx.context_id === settings.contextId) {
+                        option.selected = true;
+                    }
+                    selector.appendChild(option);
+                });
+                
+                const manualOption = document.createElement('option');
+                manualOption.value = "__MANUAL__";
+                manualOption.textContent = "➕ Ingresar ID manualmente...";
+                selector.appendChild(manualOption);
+            } else {
+                const option = document.createElement('option');
+                option.disabled = true;
+                option.textContent = "No se encontraron cursos previos.";
+                selector.appendChild(option);
+                elements.contextIdContainer.classList.remove('hidden');
+            }
+        } else {
+            console.error('Fetch error:', response.status);
+            const selector = elements.contextSelector;
+            selector.innerHTML = '<option value="">❌ Error al cargar cursos</option>';
+        }
+    } catch (error) {
+        console.error('Error loading contexts:', error);
+        const selector = elements.contextSelector;
+        selector.innerHTML = '<option value="">⚠️ Error de conexión</option>';
+    }
+}
+
+
+// Logic to show/hide manual input
+document.getElementById('context-selector').addEventListener('change', (e) => {
+    if (e.target.value === "__MANUAL__") {
+        elements.contextIdContainer.classList.remove('hidden');
+    } else {
+        elements.contextIdContainer.classList.add('hidden');
+        if (e.target.value) {
+            elements.contextId.value = e.target.value;
+        }
+    }
+});
+
+async function saveSettings() {
+    const apiUrlValue = elements.apiUrl.value.trim();
+    let contextIdValue = elements.contextSelector.value;
+    
+    if (contextIdValue === "__MANUAL__" || !contextIdValue) {
+        contextIdValue = elements.contextId.value.trim();
+    }
+
+    if (!apiUrlValue) {
+        alert('Por favor ingresa la URL del API');
+        return;
+    }
+
+
+    await chrome.storage.local.set({
+        apiUrl: apiUrlValue,
+        contextId: contextIdValue,
+    });
+
+    alert('✅ Configuración guardada');
 }
 
 async function loadState() {
@@ -116,11 +278,29 @@ function setupEventListeners() {
     // History
     elements.refreshHistory.addEventListener('click', loadHistory);
 
+    // Advanced settings toggle
+    elements.toggleAdvanced.addEventListener('click', () => {
+        const isOpen = elements.advancedContent.classList.toggle('hidden');
+        elements.toggleAdvanced.classList.toggle('open', !isOpen);
+    });
+
     // Settings
     elements.saveSettings.addEventListener('click', saveSettings);
     elements.loginBtn.addEventListener('click', handleLogin);
+    elements.showRegister.addEventListener('click', (e) => {
+        e.preventDefault();
+        elements.loginForm.classList.add('hidden');
+        elements.registerForm.classList.remove('hidden');
+    });
+    elements.showLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        elements.registerForm.classList.add('hidden');
+        elements.loginForm.classList.remove('hidden');
+    });
+    elements.registerBtn.addEventListener('click', handleRegister);
     elements.disconnect.addEventListener('click', handleLogout);
     elements.clearLocal.addEventListener('click', clearLocalData);
+
 
     // Modal
     elements.closeModal.addEventListener('click', hideModal);
@@ -133,8 +313,17 @@ function switchTab(tabName) {
     elements.tabs.forEach(t => t.classList.remove('active'));
     elements.panels.forEach(p => p.classList.remove('active'));
 
-    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-    document.getElementById(`${tabName}-panel`).classList.add('active');
+    const tab = Array.from(elements.tabs).find(t => t.dataset.tab === tabName);
+    const panel = document.getElementById(`${tabName}-panel`);
+
+    if (tab && panel) {
+        tab.classList.add('active');
+        panel.classList.add('active');
+    }
+
+    if (tabName === 'settings') {
+        loadUserContexts();
+    }
 
     // Load data when switching to history
     if (tabName === 'history') {
@@ -183,10 +372,18 @@ function updateTrackingUI() {
 }
 
 function updateSessionTime(startTime) {
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    const minutes = Math.floor(elapsed / 60);
-    const seconds = elapsed % 60;
-    elements.sessionTime.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    if (sessionTimer) clearTimeout(sessionTimer);
+    
+    const update = () => {
+        if (!isTracking) return;
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        elements.sessionTime.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        sessionTimer = setTimeout(update, 1000);
+    };
+    
+    update();
 }
 
 // ===== Pending Data =====
@@ -197,9 +394,14 @@ function updatePendingDataUI() {
 
         elements.pendingList.innerHTML = pendingData.map((item, index) => `
       <div class="pending-item">
-        <span class="url" title="${item.url}">${new URL(item.url).hostname}</span>
-        <span class="time">${formatDuration(item.timeSpent)}</span>
-        <button class="remove" data-index="${index}">×</button>
+        <div class="item-main">
+          <div class="title">${item.title || new URL(item.url).hostname}</div>
+          <div class="url-path">${new URL(item.url).pathname}</div>
+        </div>
+        <div class="item-meta">
+          <span class="time">${formatDuration(item.timeSpent)}</span>
+          <button class="remove" data-index="${index}">×</button>
+        </div>
       </div>
     `).join('');
 
@@ -225,9 +427,8 @@ function formatDuration(seconds) {
 
 // ===== Preview & Send =====
 async function showPreview() {
-    const settings = await chrome.storage.local.get(['apiUrl', 'authToken', 'contextId']);
-
-    if (!settings.apiUrl || !settings.authToken) {
+    const settings = await getAuthSettings();
+    if (!settings) {
         alert('Por favor configura la URL del API y conecta con Moodle primero.');
         switchTab('settings');
         return;
@@ -241,7 +442,7 @@ async function showPreview() {
     // Call preview API
     try {
         const payload = {
-            userID: 1, // Will be set by server from token
+            userID: settings.global_user_id,
             associatedPLE: settings.contextId || 'default',
             trackedDataList: pendingData.map(item => ({
                 activityType: item.type || 'webpage',
@@ -257,9 +458,9 @@ async function showPreview() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Token ${settings.authToken}`,
+                'Authorization': settings.authHeader
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
@@ -301,11 +502,12 @@ function hideModal() {
 }
 
 async function confirmAndSend() {
-    const settings = await chrome.storage.local.get(['apiUrl', 'authToken', 'contextId']);
+    const settings = await getAuthSettings();
+    if (!settings || pendingData.length === 0) return;
 
     try {
         const payload = {
-            userID: 1,
+            userID: settings.global_user_id,
             associatedPLE: settings.contextId || 'default',
             trackedDataList: pendingData.map(item => ({
                 activityType: item.type || 'webpage',
@@ -314,14 +516,19 @@ async function confirmAndSend() {
                 associatedKeywords: item.keywords || [],
                 startTime: new Date(item.startTime).toISOString(),
                 endTime: new Date(item.endTime).toISOString(),
+                activeTime: item.activeTime || item.timeSpent,
+                scrollDepth: item.scrollDepth || 0,
+                contentSummary: item.contentSummary || '',
+                videoData: item.videoData || null,
             }))
+
         };
 
         const response = await fetch(`${settings.apiUrl}/interactions/tracked-data-batch/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Token ${settings.authToken}`,
+                'Authorization': settings.authHeader,
             },
             body: JSON.stringify(payload),
         });
@@ -346,9 +553,8 @@ async function confirmAndSend() {
 
 // ===== History =====
 async function loadHistory() {
-    const settings = await chrome.storage.local.get(['apiUrl', 'authToken']);
-
-    if (!settings.apiUrl || !settings.authToken) {
+    const settings = await getAuthSettings();
+    if (!settings) {
         elements.historyList.innerHTML = '<p class="placeholder">Conecta con Moodle para ver tu historial</p>';
         return;
     }
@@ -356,7 +562,7 @@ async function loadHistory() {
     try {
         // Load stats
         const statsResponse = await fetch(`${settings.apiUrl}/interactions/user-stats/`, {
-            headers: { 'Authorization': `Token ${settings.authToken}` }
+            headers: { 'Authorization': settings.authHeader }
         });
 
         if (statsResponse.ok) {
@@ -368,7 +574,7 @@ async function loadHistory() {
 
         // Load recent history
         const historyResponse = await fetch(`${settings.apiUrl}/interactions/user-history/?page_size=10`, {
-            headers: { 'Authorization': `Token ${settings.authToken}` }
+            headers: { 'Authorization': settings.authHeader }
         });
 
         if (historyResponse.ok) {
@@ -395,16 +601,10 @@ async function loadHistory() {
     }
 }
 
-// ===== Settings =====
-async function saveSettings() {
-    await chrome.storage.local.set({
-        apiUrl: elements.apiUrl.value,
-        contextId: elements.contextId.value,
-    });
-    alert('✓ Configuración guardada');
-}
 
+// ===== Authentication =====
 async function handleLogin() {
+
     const apiUrl = elements.apiUrl.value;
     const email = elements.loginEmail.value.trim();
     const password = elements.loginPassword.value;
@@ -440,11 +640,16 @@ async function handleLogin() {
                 authToken: data.token,
                 userName: data.display_name,
                 userEmail: data.email,
+                apiUrl: apiUrl, // Save the apiUrl that worked
             });
-            showUserConnected(data.display_name);
+            showUserConnected(data.display_name, data.email);
+            updateConnectionStatus(true, data.display_name);
+            loadUserContexts(); // Also load contexts immediately
+            loadHistory(); // Load history too
             // Clear password field
             elements.loginPassword.value = '';
         } else {
+
             showLoginError(data.error || 'Credenciales inválidas');
         }
     } catch (error) {
@@ -460,10 +665,39 @@ function showLoginError(message) {
     elements.loginError.classList.remove('hidden');
 }
 
-function showUserConnected(name) {
-    elements.loginForm.classList.add('hidden');
-    elements.userInfo.classList.remove('hidden');
-    elements.userName.textContent = name;
+function showUserConnected(name, email) {
+    elements.welcomeView.classList.add('hidden');
+    elements.trackingView.classList.remove('hidden');
+    
+    elements.userInfoCard.classList.remove('hidden');
+    elements.userName.textContent = name || 'Usuario';
+    elements.userEmailDisplay.textContent = email || '';
+    elements.courseSelectorGroup.classList.remove('hidden');
+    
+    // Hide auth section within advanced settings since we are connected
+    elements.authSection.classList.add('hidden');
+}
+
+function showUserDisconnected() {
+    elements.welcomeView.classList.remove('hidden');
+    elements.trackingView.classList.add('hidden');
+    
+    elements.userInfoCard.classList.add('hidden');
+    elements.courseSelectorGroup.classList.add('hidden');
+    elements.authSection.classList.remove('hidden');
+}
+
+function updateConnectionStatus(isConnected, name = '') {
+    const card = elements.connectionCard;
+    if (isConnected) {
+        card.className = 'connection-card status-connected';
+        elements.connTitle.textContent = '✓ Conectado';
+        elements.connDesc.textContent = `Sincronizado correctamente como ${name}.`;
+    } else {
+        card.className = 'connection-card status-disconnected';
+        elements.connTitle.textContent = '⚠️ Desconectado';
+        elements.connDesc.textContent = 'Abre Moodle para activar la extensión automáticamente.';
+    }
 }
 
 async function handleLogout() {
@@ -482,10 +716,91 @@ async function handleLogout() {
         }
     }
 
-    await chrome.storage.local.remove(['authToken', 'userName', 'userEmail']);
-    elements.loginForm.classList.remove('hidden');
-    elements.userInfo.classList.add('hidden');
+    await chrome.storage.remove(['authToken', 'userName', 'userEmail', 'ltiPaired', 'jwtAccess']);
+    showUserDisconnected();
+    updateConnectionStatus(false);
 }
+
+async function handleRegister() {
+    const apiUrl = elements.apiUrl.value;
+    const username = elements.regUsername.value.trim();
+    const email = elements.regEmail.value.trim();
+    const firstName = elements.regFirstName.value.trim();
+    const lastName = elements.regLastName.value.trim();
+    const password = elements.regPassword.value;
+    const passwordConfirm = elements.regPasswordConfirm.value;
+
+    elements.registerError.classList.add('hidden');
+
+    if (!apiUrl) {
+        showRegisterError('Configura la URL del API primero');
+        return;
+    }
+
+    if (!username || !email || !password || !passwordConfirm || !firstName || !lastName) {
+        showRegisterError('Todos los campos son obligatorios');
+        return;
+    }
+
+    if (password !== passwordConfirm) {
+        showRegisterError('Las contraseñas no coinciden');
+        return;
+    }
+
+    elements.registerBtn.disabled = true;
+    elements.registerBtn.textContent = '⏳ Creando cuenta...';
+
+    try {
+        const response = await fetch(`${apiUrl}/auth/register/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username,
+                email,
+                first_name: firstName,
+                last_name: lastName,
+                password,
+                password_confirm: passwordConfirm
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            await chrome.storage.local.set({
+                authToken: data.token,
+                userName: data.display_name,
+                userEmail: data.email,
+                apiUrl: apiUrl, // Save the apiUrl that worked
+            });
+            showUserConnected(data.display_name, data.email);
+            updateConnectionStatus(true, data.display_name);
+            loadUserContexts();
+            loadHistory();
+            // Clear password fields
+            elements.regPassword.value = '';
+            elements.regPasswordConfirm.value = '';
+        } else {
+            // Handle field errors
+            let errorMsg = 'Error al registrar';
+            if (typeof data === 'object') {
+                errorMsg = Object.values(data).flat().join(' ');
+            }
+            showRegisterError(errorMsg);
+        }
+    } catch (error) {
+        showRegisterError(`Error de conexión: ${error.message}`);
+    } finally {
+        elements.registerBtn.disabled = false;
+        elements.registerBtn.textContent = '✨ Crear Cuenta';
+    }
+}
+
+function showRegisterError(message) {
+    elements.registerError.textContent = message;
+    elements.registerError.classList.remove('hidden');
+}
+
 
 async function clearLocalData() {
     if (confirm('¿Borrar todos los datos locales? Esto eliminará datos pendientes no enviados.')) {
@@ -500,5 +815,19 @@ async function clearLocalData() {
 chrome.runtime.onMessage.addListener((message) => {
     if (message.action === 'pendingDataUpdated') {
         loadState();
+    }
+
+    // Auto-pairing: show connected state immediately
+    if (message.action === 'ltiPairingStored') {
+        const name = message.user?.name || 'LTI Usuario';
+        const email = message.user?.email || '';
+        showUserConnected(name, email);
+        updateConnectionStatus(true, name);
+        
+        // Auto-fill context if provided
+        if (message.context_id && elements.contextId) {
+            elements.contextId.value = message.context_id;
+        }
+        loadUserContexts();
     }
 });

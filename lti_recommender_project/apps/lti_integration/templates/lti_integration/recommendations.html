@@ -352,6 +352,29 @@
                 console.error('Error de red al registrar interacción:', error);
             }
         }
+
+        // Auto-pairing con la extensión de navegador
+        {% if extension_tokens %}
+        window.addEventListener('load', function() {
+            // El Content Script de la extensión escuchará este mensaje
+            window.postMessage({
+                type: 'LTI_RECOMMENDER_PAIRING',
+                payload: {
+                    tokens: {
+                        access: '{{ extension_tokens.access }}',
+                        refresh: '{{ extension_tokens.refresh }}'
+                    },
+                    user: {
+                        global_user_id: '{{ global_user_id }}',
+                        email: '{{ user_email }}',
+                        name: '{{ user_name }}'
+                    },
+                    context_id: '{{ context_id }}'
+                }
+            }, '*');
+            console.log("Mensaje de emparejamiento enviado a la extensión.");
+        });
+        {% endif %}
     </script>
 </body>
 

@@ -16,7 +16,7 @@ from django.shortcuts import render
 
 from lti_recommender_project.apps.resources.models import EducationalResource
 from lti_recommender_project.apps.interactions.models import UserInteraction
-from lti_recommender_project.apps.users.models import UserProfile
+from lti_recommender_project.apps.users.models import GlobalUser
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ def dashboard_overview(request):
         # Basic counts
         total_resources = EducationalResource.objects.count()
         total_interactions = UserInteraction.objects.count()
-        total_users = UserProfile.objects.count()
+        total_users = GlobalUser.objects.count()
         
         # Recent activity
         interactions_24h = UserInteraction.objects.filter(timestamp__gte=last_24h).count()
@@ -218,10 +218,8 @@ def user_engagement(request):
     """
     try:
         # User engagement distribution
-        engagement_stats = UserProfile.objects.annotate(
-            interaction_count=Count('lti_user_id', filter=Q(
-                lti_user_id__in=UserInteraction.objects.values('lti_user_id')
-            ))
+        engagement_stats = GlobalUser.objects.annotate(
+            interaction_count=Count('interactions')
         ).aggregate(
             total_users=Count('id'),
             users_with_interactions=Count('id', filter=Q(interaction_count__gt=0)),
@@ -229,7 +227,7 @@ def user_engagement(request):
         
         # Engagement by level
         level_stats = list(
-            UserProfile.objects.values('inferred_level').annotate(
+            GlobalUser.objects.values('inferred_level').annotate(
                 count=Count('id')
             ).order_by('-count')
         )
@@ -445,10 +443,21 @@ def visual_dashboard(request):
     if last_seq and last_seq.ensemble_weight:
         weights['sequential'] = last_seq.ensemble_weight * 100
 
+    # Resource Category counts
+    from lti_recommender_project.apps.resources.models import EducationalResource
+    youtube_count = EducationalResource.objects.filter(url__icontains='youtube').count()
+    openalex_count = EducationalResource.objects.filter(resource_id__icontains='openalex').count()
+    arxiv_count = EducationalResource.objects.filter(url__icontains='arxiv').count()
+    kaggle_count = EducationalResource.objects.filter(resource_id__icontains='kaggle').count()
+
     context = {
         'latest_results': latest_results,
         'history_json': history_json,
         'weights_json': json.dumps(weights),
+        'youtube_count': youtube_count,
+        'openalex_count': openalex_count,
+        'arxiv_count': arxiv_count,
+        'kaggle_count': kaggle_count,
     }
 
     return render(request, 'analytics/dashboard.html', context)

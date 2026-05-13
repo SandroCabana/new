@@ -15,6 +15,8 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+XAPI_BEARER_TOKEN = 'lti_recommender_xapi_secret_2026'
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -39,8 +41,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     # Third party apps
+    'corsheaders',
     'rest_framework',
     'rest_framework.authtoken',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'pylti1p3.contrib.django.lti1p3_tool_config',
     'django_celery_beat',  # Celery Beat scheduler
     
@@ -54,17 +59,26 @@ INSTALLED_APPS = [
 ]
 
 # ... (otras configuraciones)
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
 # Configuración para cookies SameSite en desarrollo local (NO PARA PRODUCCIÓN)
 SESSION_COOKIE_SAMESITE = None
 SESSION_COOKIE_SECURE = False # <--- ¡CUIDADO! Esto desactiva la seguridad de la cookie
 CSRF_COOKIE_SAMESITE = None
 CSRF_COOKIE_SECURE = False # <--- ¡CUIDADO! Esto desactiva la seguridad de la cookie
+CSRF_TRUSTED_ORIGINS = [
+    'chrome-extension://ichljheklenhagioklbflojlebie',
+    'http://localhost:8080',
+    'http://localhost',
+    'http://127.0.0.1',
+]
 
 # Asegúrate de que el middleware XFrameOptionsMiddleware esté comentado (como ya lo tienes)
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     #'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -116,16 +130,8 @@ WSGI_APPLICATION = 'lti_recommender_project.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'lti_recommender_db',
-        'USER': 'lti_user',
-        'PASSWORD': 'lti_user',
-        'HOST': 'localhost',
-        'PORT': '5433',
-        'OPTIONS': {
-            'connect_timeout': 10,
-        },
-        'CONN_MAX_AGE': 600,  # Conexiones persistentes para mejor rendimiento
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -192,10 +198,10 @@ RECOMMENDATION_CONFIG = {
 
 EMBEDDING_MODEL = RECOMMENDATION_CONFIG['EMBEDDING_MODEL']
 
-# Celery Settings (development — uses in-memory broker)
-CELERY_BROKER_URL = 'memory://'
-CELERY_RESULT_BACKEND = 'cache+memory://'
-CELERY_TASK_ALWAYS_EAGER = True  # Execute tasks synchronously in dev
+# Celery Settings (using Redis as requested for event pipeline)
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'
+CELERY_TASK_ALWAYS_EAGER = False  # Set to False to run asynchronously via worker
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -203,8 +209,22 @@ CELERY_RESULT_SERIALIZER = 'json'
 # REST Framework Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ],
+}
+
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
 }

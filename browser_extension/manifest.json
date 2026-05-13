@@ -34,7 +34,8 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content/tracker.js"],
-      "run_at": "document_idle"
+      "run_at": "document_start",
+      "all_frames": true
     }
   ],
   

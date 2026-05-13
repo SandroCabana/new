@@ -153,9 +153,21 @@ class EnsembleRecommender:
             try:
                 # Get extended recommendations
                 recs = model_info['get_recs'](user_id, context_id, limit * 3)
-                weight = model_info['weight']
                 
+                # Validation and logging
+                if recs is None:
+                    logger.warning(f"Model {model_name} returned None for user {user_id}")
+                    recs = []
+                elif not isinstance(recs, list):
+                    logger.error(f"Model {model_name} returned {type(recs)} instead of list for user {user_id}")
+                    recs = []
+                
+                logger.info(f"Ensemble: model {model_name} provided {len(recs)} candidates for {user_id}")
+                
+                weight = model_info['weight']
                 for rec in recs:
+                    if not isinstance(rec, dict):
+                        continue
                     item_id = rec.get('id')
                     if item_id is None:
                         continue
@@ -212,7 +224,15 @@ class EnsembleRecommender:
             try:
                 recs = model_info['get_recs'](user_id, context_id, limit * 2)
                 
+                if not isinstance(recs, list):
+                    logger.warning(f"RankFusion: Model {model_name} did not return a list")
+                    recs = []
+                
+                logger.info(f"RankFusion: {model_name} returned {len(recs)} items")
+                
                 for rank, rec in enumerate(recs, start=1):
+                    if not isinstance(rec, dict):
+                        continue
                     item_id = rec.get('id')
                     if item_id is None:
                         continue
@@ -258,7 +278,15 @@ class EnsembleRecommender:
             try:
                 recs = model_info['get_recs'](user_id, context_id, limit)
                 
+                if not isinstance(recs, list):
+                    logger.warning(f"Voting: Model {model_name} did not return a list")
+                    recs = []
+                
+                logger.info(f"Voting: {model_name} returned {len(recs)} items")
+                
                 for rank, rec in enumerate(recs, start=1):
+                    if not isinstance(rec, dict):
+                        continue
                     item_id = rec.get('id')
                     if item_id is None:
                         continue

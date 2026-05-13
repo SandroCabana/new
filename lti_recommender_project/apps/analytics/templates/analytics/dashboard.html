@@ -121,10 +121,20 @@
         </div>
 
         <!-- Line Chart: Hit Rate Trend -->
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h3 class="text-base font-medium text-gray-900 mb-4">Sequential Model Performance (Hit Rate @ 10)</h3>
-            <div class="relative h-64">
-                <canvas id="hitRateChart"></canvas>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-base font-medium text-gray-900 mb-4">Sequential Model Performance (Hit Rate @ 10)</h3>
+                <div class="relative h-64">
+                    <canvas id="hitRateChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Bar Chart: Resource Sources -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-base font-medium text-gray-900 mb-4">Resource Distribution by Source</h3>
+                <div class="relative h-64">
+                    <canvas id="sourcesChart"></canvas>
+                </div>
             </div>
         </div>
 
@@ -241,6 +251,44 @@
             cutout: '70%',
             plugins: {
                 legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // 4. Resource Sources Chart (Bar)
+    const sourcesCtx = document.getElementById('sourcesChart').getContext('2d');
+    new Chart(sourcesCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Kaggle (Cursos)', 'arXiv (Papers EN)', 'OpenAlex (Papers ES)', 'YouTube (Videos ES)'],
+            datasets: [{
+                label: 'Número de Recursos',
+                data: [
+                    {{ kaggle_count|default:"0" }},
+                    {{ arxiv_count|default:"0" }},
+                    {{ openalex_count|default:"0" }},
+                    {{ youtube_count|default:"0" }}
+                ],
+                backgroundColor: [
+                    'rgba(59, 130, 246, 0.7)', // blue (Kaggle)
+                    'rgba(168, 85, 247, 0.7)', // purple (arXiv)
+                    'rgba(234, 179, 8, 0.7)',  // yellow (OpenAlex)
+                    'rgba(239, 68, 68, 0.7)'   // red (YouTube)
+                ],
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Total Guardados' }
+                }
             }
         }
     });

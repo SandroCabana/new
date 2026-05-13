@@ -8,8 +8,17 @@ class UserInteraction(models.Model):
     Incluye tracking avanzado de engagement y comportamiento.
     """
     # Usamos CharField para lti_user_id y lti_context_id para que coincidan con los IDs que vienen de LTI.
-    lti_user_id = models.CharField(max_length=255, help_text="ID del usuario LTI.")
+    lti_user_id = models.CharField(max_length=255, help_text="ID del usuario LTI (Deprecado a favor de global_user).", null=True, blank=True)
     lti_context_id = models.CharField(max_length=255, help_text="ID del contexto LTI (curso).")
+    
+    global_user = models.ForeignKey(
+        'users.GlobalUser',
+        on_delete=models.CASCADE,
+        related_name='interactions',
+        null=True,
+        blank=True,
+        help_text="Usuario global que realizó la interacción."
+    )
     
     # Relación con el recurso educativo que fue interactuado.
     # Si un recurso se elimina, las interacciones con él también se eliminan (CASCADE).
@@ -90,6 +99,7 @@ class UserInteraction(models.Model):
         # Indexar por usuario y recurso para búsquedas rápidas
         indexes = [
             models.Index(fields=['lti_user_id', 'resource']),
+            models.Index(fields=['global_user', 'resource']),
             models.Index(fields=['lti_context_id']),
             models.Index(fields=['rating']),  # Para queries de recursos mejor valorados
             models.Index(fields=['timestamp']),  # Para análisis temporales

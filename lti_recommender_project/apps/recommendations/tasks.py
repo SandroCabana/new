@@ -277,8 +277,8 @@ def precompute_active_users():
 )
 def run_scraper_task():
     """
-    Ejecuta el scraper de Scrapy programáticamente.
-    Tras completar, dispara update_embeddings_incremental.
+    Ejecuta los spiders de Scrapy programáticamente (inglés y español).
+    Tras completar todos, dispara update_embeddings_incremental.
     Ejecutado nightly a las 3am UTC via Celery Beat.
     """
     import subprocess
@@ -289,27 +289,40 @@ def run_scraper_task():
         'lti_recommender_project', 'scraper'
     )
 
-    try:
-        result = subprocess.run(
-            ['scrapy', 'crawl', 'oer'],
-            cwd=scraper_dir,
-            capture_output=True,
-            text=True,
-            timeout=1800,  # 30 min max
-        )
+    spiders_to_run = ['oer', 'openalex_es', 'youtube_edu']
+    results_summary = {}
+    all_success = True
 
-        if result.returncode == 0:
-            logger.info("Scraper completed successfully")
-            # Update embeddings for newly scraped resources
+    try:
+        for spider in spiders_to_run:
+            logger.info(f"Starting spider: {spider}")
+            result = subprocess.run(
+                ['scrapy', 'crawl', spider],
+                cwd=scraper_dir,
+                capture_output=True,
+                text=True,
+                timeout=1800,  # 30 min max per spider
+            )
+
+            if result.returncode == 0:
+                logger.info(f"Spider {spider} completed successfully")
+                results_summary[spider] = 'ok'
+            else:
+                logger.error(f"Spider {spider} failed: {result.stderr[-300:]}")
+                results_summary[spider] = 'error'
+                all_success = False
+
+        if all_success or any(status == 'ok' for status in results_summary.values()):
+            # Update embeddings for ANY newly scraped resources
+            logger.info("Triggering embedding updates for newly scraped items")
             update_embeddings_incremental.apply_async(countdown=30, queue='embeddings')
-            return {'status': 'ok', 'output': result.stdout[-500:]}
+            return {'status': 'completed', 'details': results_summary}
         else:
-            logger.error(f"Scraper failed: {result.stderr[-500:]}")
-            return {'status': 'error', 'stderr': result.stderr[-500:]}
+            return {'status': 'all_failed', 'details': results_summary}
 
     except subprocess.TimeoutExpired:
-        logger.error("Scraper timed out after 30 minutes")
-        return {'status': 'timeout'}
+        logger.error("A scraper timed out after 30 minutes")
+        return {'status': 'timeout', 'details': results_summary}
     except Exception as e:
         logger.error(f"Scraper task error: {e}", exc_info=True)
         return {'status': 'error', 'error': str(e)}

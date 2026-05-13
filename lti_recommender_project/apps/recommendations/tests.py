@@ -11,7 +11,7 @@ import logging
 
 from lti_recommender_project.apps.interactions.models import UserInteraction
 from lti_recommender_project.apps.resources.models import EducationalResource
-from lti_recommender_project.apps.users.models import UserProfile
+from lti_recommender_project.apps.users.models import GlobalUser
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +35,8 @@ class EnsembleRecommenderTests(TestCase):
             )
             cls.resources.append(resource)
         
-        # Create test user profile
-        cls.user_profile = UserProfile.objects.create(
-            lti_user_id='test-user-1',
+        cls.global_user = GlobalUser.objects.create(
+            email='test-user-1@example.com',
             display_name='Test User',
             inferred_level='intermediate'
         )
@@ -150,12 +149,11 @@ class RecommendationEngineTests(TestCase):
             )
             cls.resources.append(resource)
         
-        # Create user profile with preferences
-        cls.user_profile = UserProfile.objects.create(
-            lti_user_id='rec-test-user',
+        cls.global_user = GlobalUser.objects.create(
+            email='rec-test-user@example.com',
             display_name='Rec Engine Test User',
             inferred_level='intermediate',
-            preferred_resource_types={'video': 5, 'article': 3},
+            preferences_json={'video': 5, 'article': 3},
             interest_tags='python, machine-learning'
         )
         
@@ -368,9 +366,8 @@ class ModelIntegrationTests(TestCase):
                 lti_context_id='integration-context'
             )
         
-        # Create user with interactions
-        UserProfile.objects.create(
-            lti_user_id='integration-user',
+        GlobalUser.objects.create(
+            email='integration-user@example.com',
             display_name='Integration Test User'
         )
     

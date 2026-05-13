@@ -58,6 +58,7 @@ class LTIClaimsExtractor:
             'family_name': launch_data.get('family_name', ''),
             'email': launch_data.get('email', ''),
             'locale': launch_data.get('locale', 'es'),
+            'issuer': launch_data.get('iss', 'unknown_issuer'),
 
             # ── Context (Curso) ────────────────────────────────────────
             'context_id': cls._get_nested(launch_data, 'context', 'id', default='N/A'),

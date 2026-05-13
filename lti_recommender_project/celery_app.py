@@ -20,6 +20,10 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 # Auto-discover tasks in all installed apps
 app.autodiscover_tasks()
 
+# Fix deprecation warnings and ensure connection resilience
+app.conf.broker_connection_retry_on_startup = True
+app.conf.broker_connection_retry = True
+
 # ============================================================================
 # BEAT SCHEDULE — periodic tasks
 # ============================================================================

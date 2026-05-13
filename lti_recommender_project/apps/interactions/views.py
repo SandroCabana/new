@@ -9,6 +9,9 @@ from django.utils import timezone
 from .serializers import TrackedBatchSerializer
 from lti_recommender_project.apps.resources.models import EducationalResource
 from lti_recommender_project.apps.interactions.models import UserInteraction
+import logging
+
+logger = logging.getLogger(__name__)
 
 class TrackedDataBatchView(APIView):
     """
@@ -19,106 +22,47 @@ class TrackedDataBatchView(APIView):
     def post(self, request):
         serializer = TrackedBatchSerializer(data=request.data)
         if not serializer.is_valid():
+            logger.warning(f"Batch Serializer Errors: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         data = serializer.validated_data
-        user_id = str(data['userID'])
+        
+        # 1. Resolve User ID (Priority: Payload > JWT > Email)
+        user_id = data.get('userID')
+        if not user_id:
+            jwt_payload = getattr(request.auth, 'payload', {}) if request.auth else {}
+            user_id = jwt_payload.get('global_user_id')
+        
+        if not user_id:
+            from lti_recommender_project.apps.users.models import GlobalUser
+            g_user = GlobalUser.objects.filter(email__iexact=request.user.email).first()
+            user_id = str(g_user.id) if g_user else None
+            
+        if not user_id:
+            return Response({"error": "No se pudo identificar al usuario global."}, status=status.HTTP_400_BAD_REQUEST)
+
         context_id = data['associatedPLE']
         tracked_data_list = data['trackedDataList']
 
-        response_tracked_data_ids = []
-
-        for tracked_item in tracked_data_list:
-            # 1. Calculate time_spent
-            start_time = tracked_item['startTime']
-            end_time = tracked_item['endTime']
-            time_spent = (end_time - start_time).total_seconds()
-            
-            # Ensure non-negative time_spent
-            if time_spent < 0:
-                time_spent = 0
-
-            # 2. Get or Create Resource
-            url = tracked_item['associatedURL']
-            
-            # Generate hash for resource_id if needed
-            url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
-            
-            resource, created = EducationalResource.objects.get_or_create(
-                url=url,
-                defaults={
-                    'resource_id': url_hash,
-                    'title': f"External Resource {url_hash[:8]}", # Default title
-                    'description': "Imported from external tracking",
-                    'resource_type': tracked_item['activityType'],
-                    'lti_context_id': context_id # Associate with logic context? Or keep null? Keeping logic simpler.
-                                                 # User said associatedPLE maps to lti_context_id, so maybe resource context?
-                                                 # But resources are unique by URL. Let's assume global resources for now 
-                                                 # or update if existing. For get_or_create, unique is on URL mostly?
-                                                 # Model has unique_together ('resource_id', 'lti_context_id').
-                                                 # If we use url to find, we might have issues if unique constraint is strict.
-                                                 # Let's try to get by url first regardless of context.
-                }
+        # Enqueue processing task
+        try:
+            from .tasks import process_tracking_batch
+            # In simplejwt, request.user.username is global_user.id or we can get global_user_id from the token
+            # Actually, user_id from the payload is supposed to be global_user_id
+            process_tracking_batch.delay(
+                global_user_id=user_id,
+                context_id=context_id,
+                items=tracked_data_list
             )
-
-            # Update tags/metadata if needed (simple append or replace logic could be complex, skipping for now or just setting if new)
-            if created:
-                tags = tracked_item.get('associatedKeywords', [])
-                domains = tracked_item.get('associatedDomains', [])
-                # Store domains in metadata or description?
-                # User said: "associatedDomains and keywords to tags/metadata"
-                resource.tags = ",".join(tags) if tags else ""
-                # We don't have a metadata field on Resource similar to Interaction, keeping it simple.
-                resource.save()
             
-            # 3. Create UserInteraction
-            feedback = tracked_item.get('feedback', {})
-            rating = None
-            comments = None
-            if feedback:
-                rating = feedback.get('score')
-                comments = feedback.get('comments')
-            
-            # Prepare metadata
-            interaction_metadata = {
-                "domains": tracked_item.get('associatedDomains', []),
-                "comments": comments
+            response_payload = {
+                "trackedBatchID": str(uuid.uuid4()),
+                "status": "enqueued",
+                "message": "Los datos han sido encolados para su procesamiento asíncrono."
             }
-            
-            # Decide interaction types
-            # Logic: If rating exists -> 'rated'. if time_spent > 0 -> 'viewed'.
-            # We can create multiple interactions or one main one. 
-            # Requirement says "Create UserInteraction", singular implies one per tracked item.
-            # Let's verify standard interaction types.
-            interaction_type = tracked_item['activityType'] # Use activity type as base? or 'external_view'?
-            # User said: "Interaction: Create UserInteraction. rating = feedback.score."
-            # and "activityType -> resource.resource_type".
-            # Let's default to 'viewed' for the interaction type unless explicit. 
-            # Actually, let's use 'viewed' as the primary interaction, and add rating to it.
-            
-            UserInteraction.objects.create(
-                lti_user_id=user_id,
-                lti_context_id=context_id,
-                resource=resource,
-                interaction_type='external_view', # Distinct from internal 'viewed'? Or just 'viewed'? 'viewed' is safer.
-                value=time_spent, # Mapping value to time_spent generic field
-                time_spent=time_spent,
-                rating=rating, # Can be null
-                metadata=interaction_metadata
-            )
-
-            # Generate a trackedDataID for response
-            response_tracked_data_ids.append({
-                "trackedDataID": str(uuid.uuid4()),
-                "status": "processed"
-            })
-
-        response_payload = {
-            "trackedBatchID": str(uuid.uuid4()),
-            "trackedDataList": response_tracked_data_ids
-        }
-
-        return Response(response_payload, status=status.HTTP_201_CREATED)
+            return Response(response_payload, status=status.HTTP_202_ACCEPTED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class UserHistoryView(APIView):
@@ -130,9 +74,22 @@ class UserHistoryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Get user_id from authenticated user (via LTI)
-        user_id = str(request.user.id)
+        from lti_recommender_project.apps.users.models import GlobalUser
         
+        # 1. Resolve GlobalUser (Support JWT and Token)
+        global_user = None
+        jwt_payload = getattr(request.auth, 'payload', {}) if request.auth else {}
+        global_user_id = jwt_payload.get('global_user_id')
+
+        if global_user_id:
+            global_user = GlobalUser.objects.filter(id=global_user_id).first()
+        
+        if not global_user:
+            global_user = GlobalUser.objects.filter(email__iexact=request.user.email).first()
+
+        if not global_user:
+            return Response({'results': [], 'total': 0, 'message': 'No se encontró perfil global para este usuario.'})
+
         # Query params
         page = int(request.query_params.get('page', 1))
         page_size = min(int(request.query_params.get('page_size', 20)), 100)
@@ -140,9 +97,9 @@ class UserHistoryView(APIView):
         start_date = request.query_params.get('start_date')
         end_date = request.query_params.get('end_date')
         
-        # Build query
+        # Build query - Filter by global_user object
         interactions = UserInteraction.objects.filter(
-            lti_user_id=user_id
+            global_user=global_user
         ).select_related('resource').order_by('-timestamp')
         
         # Apply filters
@@ -195,11 +152,24 @@ class UserStatsView(APIView):
 
     def get(self, request):
         from django.db.models import Sum, Avg, Count, Min, Max
+        from lti_recommender_project.apps.users.models import GlobalUser
         
-        user_id = str(request.user.id)
+        # Resolve GlobalUser
+        global_user = None
+        jwt_payload = getattr(request.auth, 'payload', {}) if request.auth else {}
+        global_user_id = jwt_payload.get('global_user_id')
+
+        if global_user_id:
+            global_user = GlobalUser.objects.filter(id=global_user_id).first()
         
-        # Get aggregated stats
-        interactions = UserInteraction.objects.filter(lti_user_id=user_id)
+        if not global_user:
+            global_user = GlobalUser.objects.filter(email__iexact=request.user.email).first()
+
+        if not global_user:
+            return Response({'total_interactions': 0, 'total_resources': 0, 'message': 'Sin datos.'})
+
+        # Get aggregated stats - Filter by global_user
+        interactions = UserInteraction.objects.filter(global_user=global_user)
         
         stats = interactions.aggregate(
             total_interactions=Count('id'),
@@ -266,10 +236,25 @@ class DataPreviewView(APIView):
         
         serializer = TrackedBatchSerializer(data=request.data)
         if not serializer.is_valid():
+            logger.warning(f"Preview Serializer Errors: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         data = serializer.validated_data
-        user_id = str(data['userID'])
+        
+        # 1. Resolve User ID (Priority: Payload > JWT > Email)
+        user_id = data.get('userID')
+        if not user_id:
+            jwt_payload = getattr(request.auth, 'payload', {}) if request.auth else {}
+            user_id = jwt_payload.get('global_user_id')
+        
+        if not user_id:
+            from lti_recommender_project.apps.users.models import GlobalUser
+            g_user = GlobalUser.objects.filter(email__iexact=request.user.email).first()
+            user_id = str(g_user.id) if g_user else None
+
+        if not user_id:
+            return Response({"error": "No se pudo identificar al usuario global."}, status=status.HTTP_400_BAD_REQUEST)
+
         context_id = data['associatedPLE']
         tracked_data_list = data['trackedDataList']
         
@@ -283,9 +268,21 @@ class DataPreviewView(APIView):
             url_hash = hashlib.md5(url.encode('utf-8')).hexdigest()
             
             # Calculate time spent
-            start_time = tracked_item['startTime']
-            end_time = tracked_item['endTime']
-            time_spent = max(0, (end_time - start_time).total_seconds())
+            from django.utils.dateparse import parse_datetime
+            from datetime import datetime
+            
+            s_time = tracked_item.get('startTime')
+            e_time = tracked_item.get('endTime')
+            
+            # Parse if string, otherwise use as is
+            dt_start = parse_datetime(s_time) if isinstance(s_time, str) else s_time
+            dt_end = parse_datetime(e_time) if isinstance(e_time, str) else e_time
+            
+            # Fallback to now if parsing fails
+            dt_start = dt_start or datetime.now()
+            dt_end = dt_end or datetime.now()
+
+            time_spent = max(0, (dt_end - dt_start).total_seconds())
             total_time += time_spent
             
             # Check if resource exists

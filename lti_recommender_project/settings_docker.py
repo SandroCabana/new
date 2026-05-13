@@ -16,6 +16,7 @@ env = environ.Env(
     DB_CONN_MAX_AGE=(int, 600),
     CACHE_TTL=(int, 300),
     LOG_LEVEL=(str, 'INFO'),
+    XAPI_BEARER_TOKEN=(str, 'lti_recommender_xapi_secret_2026'),
 )
 
 # Build paths
@@ -317,6 +318,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
@@ -347,3 +349,19 @@ CORS_ALLOW_HEADERS = [
     'origin',
     'x-requested-with',
 ]
+
+# ==============================================================================
+# SIMPLE JWT SETTINGS
+# ==============================================================================
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=24),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+}

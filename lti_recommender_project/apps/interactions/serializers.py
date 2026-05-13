@@ -38,23 +38,29 @@ class TrackedFeedbackSerializer(serializers.Serializer):
 
 
 class TrackedDataSerializer(serializers.Serializer):
-    activityType = serializers.CharField()
+    activityType = serializers.CharField(required=False, default='viewed')
     associatedURL = serializers.CharField()
     associatedDomains = serializers.ListField(
         child=serializers.CharField(),
-        required=False, allow_empty=True
+        required=False, allow_empty=True, default=list
     )
     associatedKeywords = serializers.ListField(
         child=serializers.CharField(),
-        required=False, allow_empty=True
+        required=False, allow_empty=True, default=list
     )
-    startTime = serializers.DateTimeField()
-    endTime = serializers.DateTimeField()
+    startTime = serializers.CharField(required=False) # Accept various formats
+    endTime = serializers.CharField(required=False)
+    duration = serializers.FloatField(required=False, allow_null=True)
+    activeTime = serializers.FloatField(required=False, allow_null=True)
+    scrollDepth = serializers.FloatField(required=False, allow_null=True)
+    contentSummary = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    videoData = serializers.JSONField(required=False, allow_null=True)
     feedback = TrackedFeedbackSerializer(required=False, allow_null=True)
 
 
+
 class TrackedBatchSerializer(serializers.Serializer):
-    userID = serializers.IntegerField() # Cast to string in view
+    userID = serializers.CharField(required=False, allow_null=True) # Optional, can be inferred from token
     associatedPLE = serializers.CharField()
     trackedDataList = serializers.ListField(
         child=TrackedDataSerializer(),

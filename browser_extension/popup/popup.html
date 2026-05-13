@@ -28,32 +28,61 @@
 
     <!-- Tab Content: Track -->
     <section id="track-panel" class="panel active">
-      <div class="tracking-controls">
-        <button id="toggle-tracking" class="btn btn-primary btn-large">
-          <span class="btn-icon">▶</span>
-          <span id="toggle-text">Iniciar Sesión</span>
-        </button>
-        <p class="hint">Inicia una sesión para trackear tu navegación de aprendizaje</p>
+      <!-- Welcome View (Shown when not connected) -->
+      <div id="welcome-view" class="welcome-view">
+        <div class="welcome-icon">🚀</div>
+        <h2>¡Hola! Conecta tu cuenta</h2>
+        <p>Para empezar a recomendarte los mejores recursos, la extensión necesita sincronizarse con tu Moodle.</p>
+        
+        <div class="onboarding-steps">
+          <div class="step">
+            <span class="step-num">1</span>
+            <span>Abre <strong>Moodle</strong> en tu navegador</span>
+          </div>
+          <div class="step">
+            <span class="step-num">2</span>
+            <span>Entra a cualquier <strong>Curso</strong></span>
+          </div>
+          <div class="step">
+            <span class="step-num">3</span>
+            <span>Haz clic en <strong>Recomendaciones</strong></span>
+          </div>
+        </div>
+        
+        <div class="welcome-footer">
+          <p class="hint">La extensión se conectará automáticamente ✨</p>
+        </div>
       </div>
 
-      <div id="session-info" class="session-info hidden">
-        <h3>Sesión Activa</h3>
-        <div class="stat-row">
-          <span>Páginas visitadas:</span>
-          <span id="pages-count">0</span>
+      <!-- Tracking View (Shown when connected) -->
+      <div id="tracking-view" class="hidden">
+        <div class="tracking-controls">
+          <button id="toggle-tracking" class="btn btn-primary btn-large">
+            <span class="btn-icon">▶</span>
+            <span id="toggle-text">Iniciar Sesión</span>
+          </button>
+          <p class="hint">Inicia una sesión para trackear tu navegación de aprendizaje</p>
         </div>
-        <div class="stat-row">
-          <span>Tiempo total:</span>
-          <span id="session-time">00:00</span>
-        </div>
-      </div>
 
-      <div id="pending-data" class="pending-data hidden">
-        <h3>Datos Pendientes</h3>
-        <div id="pending-list" class="pending-list"></div>
-        <div class="preview-actions">
-          <button id="preview-btn" class="btn btn-secondary">Vista Previa</button>
-          <button id="send-btn" class="btn btn-success">Enviar al Servidor</button>
+        <div id="session-info" class="session-info hidden">
+          <h3>Sesión Activa</h3>
+          <div class="stat-row">
+            <span>Páginas visitadas:</span>
+            <span id="pages-count">0</span>
+          </div>
+          <div class="stat-row">
+            <span>Tiempo total:</span>
+            <span id="session-time">00:00</span>
+          </div>
+        </div>
+
+        <div id="pending-data" class="pending-data hidden">
+          <h3>Datos Pendientes</h3>
+          <div id="pending-list" class="pending-list"></div>
+          <div class="preview-actions">
+            <button id="preview-btn" class="btn btn-secondary">Vista Previa</button>
+            <button id="send-btn" class="btn btn-success">Enviar al Servidor</button>
+          </div>
         </div>
       </div>
     </section>
@@ -61,14 +90,14 @@
     <!-- Tab Content: History -->
     <section id="history-panel" class="panel">
       <div class="history-header">
-        <h3>Historial de Interacciones</h3>
+        <h3>Tu Actividad Reciente</h3>
         <button id="refresh-history" class="btn btn-small">🔄 Actualizar</button>
       </div>
 
       <div id="stats-summary" class="stats-summary">
         <div class="stat-card">
           <div class="stat-value" id="total-interactions">-</div>
-          <div class="stat-label">Interacciones</div>
+          <div class="stat-label">Pasos</div>
         </div>
         <div class="stat-card">
           <div class="stat-value" id="total-resources">-</div>
@@ -76,63 +105,93 @@
         </div>
         <div class="stat-card">
           <div class="stat-value" id="total-time">-</div>
-          <div class="stat-label">Tiempo Total</div>
+          <div class="stat-label">Aprendido</div>
         </div>
       </div>
 
       <div id="history-list" class="history-list">
-        <p class="placeholder">Conecta para ver tu historial</p>
+        <p class="placeholder">Conecta tu Moodle para ver tu historial de aprendizaje.</p>
       </div>
     </section>
 
     <!-- Tab Content: Settings -->
     <section id="settings-panel" class="panel">
-      <h3>Configuración</h3>
-
-      <div class="setting-group">
-        <label for="api-url">URL del API</label>
-        <input type="url" id="api-url" placeholder="https://your-server.com">
+      <!-- Connection Status Card -->
+      <div id="connection-status-card" class="connection-card status-disconnected">
+        <div class="conn-icon">⚠️</div>
+        <div class="conn-info">
+          <h4 id="conn-title">Desconectado</h4>
+          <p id="conn-desc">Sincroniza con Moodle para activar la extensión.</p>
+        </div>
       </div>
 
-      <div class="setting-group">
-        <label for="context-id">Contexto (Curso)</label>
-        <input type="text" id="context-id" placeholder="ID del curso en Moodle">
+      <!-- Logged User Info -->
+      <div id="user-info" class="user-info-card hidden">
+        <div class="user-avatar">👤</div>
+        <div class="user-details">
+          <strong id="user-name">Usuario</strong>
+          <span id="user-email-display">email@ejemplo.com</span>
+        </div>
+        <button id="disconnect" class="btn btn-danger btn-small">Cerrar Sesión</button>
       </div>
 
-      <div class="setting-group" id="auth-section">
-        <h4>Autenticación Moodle</h4>
+      <!-- Active Course Selector -->
+      <div class="setting-group" id="course-selector-group">
+        <label for="context-selector">🎓 Curso Actual</label>
+        <select id="context-selector">
+          <option value="">-- Selecciona un curso --</option>
+        </select>
+        <div id="context-id-container" class="hidden">
+          <input type="text" id="context-id" placeholder="Contexto ID Manual" style="margin-top: 10px;">
+        </div>
+      </div>
 
-        <!-- Login Form (shown when not connected) -->
-        <div id="login-form" class="login-form">
-          <p class="hint">Inicia sesión con tu correo institucional o usuario de Moodle</p>
-          <div class="form-group">
-            <label for="login-email">Email / Usuario</label>
-            <input type="text" id="login-email" placeholder="tu.email@institucion.edu" autocomplete="email">
+      <!-- Advanced Configuration Accordion -->
+      <div class="advanced-settings">
+        <button id="toggle-advanced" class="advanced-toggle">
+          <span>⚙️ Configuración Avanzada</span>
+          <span class="arrow">▼</span>
+        </button>
+        
+        <div id="advanced-content" class="advanced-content hidden">
+          <div class="setting-group">
+            <label for="api-url">🖥️ URL del Servidor</label>
+            <input type="text" id="api-url" placeholder="http://localhost:8080">
           </div>
-          <div class="form-group">
-            <label for="login-password">Contraseña</label>
-            <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+
+          <div class="manual-auth" id="auth-section">
+            <div id="login-form">
+              <p class="hint">Login Manual (Backup)</p>
+              <div class="form-group">
+                <input type="text" id="login-email" placeholder="Email / Usuario">
+              </div>
+              <div class="form-group" style="margin-top: 8px;">
+                <input type="password" id="login-password" placeholder="Contraseña">
+              </div>
+              <button id="login-btn" class="btn btn-primary btn-full" style="margin-top: 12px;">
+                🔐 Acceder
+              </button>
+              <p class="auth-toggle">¿Nuevo? <a href="#" id="show-register">Crear cuenta</a></p>
+            </div>
+
+            <!-- Register Form (hidden) -->
+            <div id="register-form" class="hidden">
+              <p class="hint">Registro Manual</p>
+              <div class="form-group"><input type="text" id="reg-username" placeholder="Usuario"></div>
+              <div class="form-group" style="margin-top: 8px;"><input type="email" id="reg-email" placeholder="Email"></div>
+              <div class="form-group" style="margin-top: 8px;"><input type="password" id="reg-password" placeholder="Contraseña"></div>
+              <button id="register-btn" class="btn btn-primary btn-full" style="margin-top: 12px;">✨ Registrar</button>
+              <p class="auth-toggle"><a href="#" id="show-login">Volver al login</a></p>
+            </div>
           </div>
+          
           <div id="login-error" class="error-message hidden"></div>
-          <button id="login-btn" class="btn btn-primary">
-            🔐 Iniciar Sesión
-          </button>
-        </div>
-
-        <!-- User Info (shown when connected) -->
-        <div id="user-info" class="user-info hidden">
-          <span>✓ Conectado como: </span>
-          <strong id="user-name"></strong>
-          <button id="disconnect" class="btn btn-danger btn-small">Cerrar Sesión</button>
+          <button id="clear-local" class="btn btn-danger btn-full" style="margin-top: 20px;">🗑️ Limpiar Datos Locales</button>
         </div>
       </div>
 
-      <div class="setting-group">
-        <button id="save-settings" class="btn btn-success">💾 Guardar Configuración</button>
-      </div>
-
-      <div class="setting-group">
-        <button id="clear-local" class="btn btn-danger">🗑️ Borrar Datos Locales</button>
+      <div class="setting-group" style="margin-top: 20px;">
+        <button id="save-settings" class="btn btn-success btn-full">💾 Guardar Cambios</button>
       </div>
     </section>
 

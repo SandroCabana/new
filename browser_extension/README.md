@@ -10,29 +10,35 @@ Extensión de Chrome para trackear sesiones de aprendizaje y sincronizar con el 
 4. Selecciona esta carpeta (`browser_extension/`)
 5. La extensión aparecerá en la barra de herramientas
 
-## Configuración
+## Configuración y Vinculación (Auto-Pairing)
 
-1. Click en el ícono de la extensión
-2. Ve a la pestaña **Config**
-3. Ingresa:
-   - **URL del API**: `http://localhost:8000` (o tu servidor de producción)
-   - **Contexto**: ID del curso Moodle
-4. Click **"Conectar con Moodle"** e ingresa tu token de autenticación
-5. Click **"Guardar Configuración"**
+La extensión ahora cuenta con **vinculación automática** para simplificar la experiencia del usuario:
+
+1. **Vía Moodle (Recomendado)**: 
+   - Simplemente abre el **LTI Recommender** dentro de tu curso de Moodle.
+   - La extensión detectará automáticamente tu sesión e identidad global.
+   - Aparecerá el estado **🔗 Conectado** en el popup de forma automática.
+   - No necesitas copiar y pegar tokens.
+
+2. **Configuración Manual (Opcional/Dev)**:
+   - Ve a la pestaña **Config**.
+   - **URL del API**: `http://localhost:8080` (o la URL de tu servidor).
+   - **Contexto**: Puedes elegir tu curso actual desde el selector desplegable (se cargan automáticamente si estás vinculado) o ingresar uno manual.
 
 ## Uso
 
-### Iniciar Sesión de Tracking
-1. Click en el ícono de la extensión
-2. Click **"Iniciar Sesión"**
-3. Navega normalmente - todas las páginas serán registradas
-4. Click **"Pausar Sesión"** cuando termines
+### 🚀 Iniciar Sesión de Aprendizaje
+1. Abre el popup de la extensión.
+2. Haz clic en **"Iniciar Sesión"**.
+3. Navega por recursos educativos (YouTube, Wikipedia, artículos, etc.). La extensión capturará el tiempo de permanencia, profundidad de scroll y metadatos del recurso.
+4. Haz clic en **"Pausar Sesión"** al terminar.
 
-### Revisar y Enviar Datos
-1. Los datos se guardan localmente primero
-2. En la sección **"Datos Pendientes"**, click **"Vista Previa"**
-3. Revisa qué datos serán enviados
-4. Click **"Confirmar y Enviar"** para sincronizar con el servidor
+### 📤 Sincronización Asíncrona
+1. Los datos se guardan de forma segura en el almacenamiento local de tu navegador.
+2. Haz clic en **"Enviar al Servidor"**.
+3. El sistema procesará los datos en segundo plano (vía Celery) para actualizar tus recomendaciones personalizadas.
+4. Revisa tu **Historial** en la extensión para ver tus últimas actividades registradas.
+
 
 ### Ver Historial
 1. Ve a la pestaña **Historial**

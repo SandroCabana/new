@@ -88,8 +88,8 @@ ENTRYPOINT ["/srv/lti_recommender_project/scripts/docker-entrypoint.sh"]
 
 CMD ["gunicorn", "lti_recommender_project.wsgi:application", \
      "--bind", "0.0.0.0:8000", \
-     "--workers", "4", \
-     "--timeout", "120", \
+     "--workers", "2", \
+     "--timeout", "300", \
      "--access-logfile", "-", \
      "--error-logfile", "-", \
      "--log-level", "info"]
