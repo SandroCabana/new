@@ -4,8 +4,7 @@
  */
 
 // ===== State =====
-let activeTab = null;
-let tabStartTime = null;
+let trackedTabs = new Map(); // tabId -> { url, title, startTime, metadata... }
 let trackingEnabled = false;
 
 // ===== Initialization =====
@@ -30,25 +29,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
 
         case 'stopTracking':
-            // Save current page before stopping
-            if (activeTab && tabStartTime) {
-                savePageData(activeTab, tabStartTime);
+            // Save all current tabs before stopping
+            for (const [tabId, data] of trackedTabs) {
+                savePageData(tabId, data);
             }
             trackingEnabled = false;
-            activeTab = null;
-            tabStartTime = null;
+            trackedTabs.clear();
             console.log('Tracking stopped');
             break;
 
         case 'pageData':
             // Receive page metadata from content script
-            if (trackingEnabled && message.data) {
-                updateActiveTabMetadata(message.data);
+            const tabId = sender.tab?.id;
+            if (trackingEnabled && message.data && tabId) {
+                updateTabMetadata(tabId, message.data);
             }
             break;
 
         case 'ltiPairingReceived':
-            // Auto-pairing from Moodle LTI dashboard via window.postMessage
             handleLtiPairing(message);
             break;
     }
@@ -58,27 +56,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
     if (!trackingEnabled) return;
 
-    // Save time for previous tab
-    if (activeTab && tabStartTime) {
-        await savePageData(activeTab, tabStartTime);
-    }
-
-    // Start tracking new tab
+    // Start tracking new tab if not already tracked
     try {
         const tab = await chrome.tabs.get(activeInfo.tabId);
-        if (isTrackableUrl(tab.url)) {
-            activeTab = {
-                id: activeInfo.tabId,
+        if (isTrackableUrl(tab.url) && !trackedTabs.has(activeInfo.tabId)) {
+            trackedTabs.set(activeInfo.tabId, {
                 url: tab.url,
                 title: tab.title,
-            };
-            tabStartTime = Date.now();
+                startTime: Date.now(),
+                engagement: { scroll_depth: 0, active_time: 0 }
+            });
 
             // Request metadata from content script
             chrome.tabs.sendMessage(activeInfo.tabId, { action: 'getPageData' }).catch(() => { });
-        } else {
-            activeTab = null;
-            tabStartTime = null;
         }
     } catch (error) {
         console.error('Error tracking tab:', error);
@@ -89,38 +79,44 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (!trackingEnabled) return;
 
     // Track URL changes (navigation)
-    if (changeInfo.status === 'complete' && tab.active) {
-        if (activeTab && activeTab.id === tabId && activeTab.url !== tab.url) {
-            // URL changed, save previous and start new
-            savePageData(activeTab, tabStartTime);
-
+    if (changeInfo.status === 'complete' && tab.url) {
+        const existing = trackedTabs.get(tabId);
+        
+        if (existing && existing.url !== tab.url) {
+            // URL changed, save previous state and start new tracking for this tab
+            savePageData(tabId, existing);
+            
             if (isTrackableUrl(tab.url)) {
-                activeTab = {
-                    id: tabId,
+                trackedTabs.set(tabId, {
                     url: tab.url,
                     title: tab.title,
-                };
-                tabStartTime = Date.now();
-
-                // Request metadata
+                    startTime: Date.now(),
+                    engagement: { scroll_depth: 0, active_time: 0 }
+                });
                 chrome.tabs.sendMessage(tabId, { action: 'getPageData' }).catch(() => { });
             } else {
-                activeTab = null;
-                tabStartTime = null;
+                trackedTabs.delete(tabId);
             }
+        } else if (!existing && isTrackableUrl(tab.url)) {
+            // New trackable tab
+            trackedTabs.set(tabId, {
+                url: tab.url,
+                title: tab.title,
+                startTime: Date.now(),
+                engagement: { scroll_depth: 0, active_time: 0 }
+            });
+            chrome.tabs.sendMessage(tabId, { action: 'getPageData' }).catch(() => { });
         }
     }
 });
 
 // Tab closed
 chrome.tabs.onRemoved.addListener((tabId) => {
-    if (activeTab && activeTab.id === tabId) {
-        if (trackingEnabled && tabStartTime) {
-            savePageData(activeTab, tabStartTime);
-        }
-        activeTab = null;
-        tabStartTime = null;
+    const data = trackedTabs.get(tabId);
+    if (data && trackingEnabled) {
+        savePageData(tabId, data);
     }
+    trackedTabs.delete(tabId);
 });
 
 // ===== URL Filtering =====
@@ -171,37 +167,38 @@ async function handleLtiPairing({ tokens, user, context_id }) {
 }
 
 // ===== Page Data Handling =====
-function updateActiveTabMetadata(metadata) {
-    if (activeTab) {
-        activeTab.title = metadata.title || activeTab.title;
-        activeTab.keywords = metadata.keywords || [];
-        activeTab.description = metadata.description || '';
-        activeTab.type = metadata.type || 'webpage';
-        activeTab.contentSummary = metadata.contentSummary || '';
-        activeTab.engagement = metadata.engagement || { scroll_depth: 0, active_time: 0 };
-        activeTab.videoData = metadata.videoData || null;
+function updateTabMetadata(tabId, metadata) {
+    const tabData = trackedTabs.get(tabId);
+    if (tabData) {
+        tabData.title = metadata.title || tabData.title;
+        tabData.keywords = metadata.keywords || [];
+        tabData.description = metadata.description || '';
+        tabData.type = metadata.type || 'webpage';
+        tabData.contentSummary = metadata.contentSummary || '';
+        tabData.engagement = metadata.engagement || { scroll_depth: 0, active_time: 0 };
+        tabData.videoData = metadata.videoData || null;
     }
 }
 
-async function savePageData(tab, startTime) {
-    const timeSpent = (Date.now() - startTime) / 1000;
+async function savePageData(tabId, data) {
+    const timeSpent = (Date.now() - data.startTime) / 1000;
 
     // Only save if meaningful time spent (more than 5 seconds)
     if (timeSpent < 5) return;
 
     const pageData = {
-        url: tab.url,
-        title: tab.title || new URL(tab.url).hostname,
-        startTime: startTime,
+        url: data.url,
+        title: data.title || new URL(data.url).hostname,
+        startTime: data.startTime,
         endTime: Date.now(),
         timeSpent: timeSpent,
-        activeTime: tab.engagement?.active_time || timeSpent,
-        scrollDepth: tab.engagement?.scroll_depth || 0,
-        contentSummary: tab.contentSummary || '',
-        videoData: tab.videoData || null,
-        keywords: tab.keywords || [],
-        type: tab.type || 'webpage',
-        domains: [new URL(tab.url).hostname],
+        activeTime: data.engagement?.active_time || timeSpent,
+        scrollDepth: data.engagement?.scroll_depth || 0,
+        contentSummary: data.contentSummary || '',
+        videoData: data.videoData || null,
+        keywords: data.keywords || [],
+        type: data.type || 'webpage',
+        domains: [new URL(data.url).hostname],
     };
 
 
@@ -230,16 +227,18 @@ async function savePageData(tab, startTime) {
 chrome.alarms.create('periodicSave', { periodInMinutes: 1 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-    if (alarm.name === 'periodicSave' && trackingEnabled && activeTab && tabStartTime) {
-        // Save current state periodically without resetting
+    if (alarm.name === 'periodicSave' && trackingEnabled) {
         const currentTime = Date.now();
-        const timeSpent = (currentTime - tabStartTime) / 1000;
 
-        if (timeSpent >= 30) {
-            // Save accumulated time
-            savePageData(activeTab, tabStartTime);
-            // Reset start time
-            tabStartTime = currentTime;
+        for (const [tabId, data] of trackedTabs) {
+            const timeSpent = (currentTime - data.startTime) / 1000;
+
+            if (timeSpent >= 30) {
+                // Save accumulated time for this specific tab
+                savePageData(tabId, data);
+                // Reset start time for this tab
+                data.startTime = currentTime;
+            }
         }
     }
 });

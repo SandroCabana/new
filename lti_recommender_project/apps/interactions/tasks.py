@@ -125,6 +125,7 @@ def process_tracking_batch(global_user_id, context_id, items):
         with transaction.atomic():
             for item in items:
                 # Use the keys defined in TrackedDataSerializer
+                print(f"DEBUG WORKER: Recibido item completo: {item}", flush=True)
                 url = item.get('associatedURL')
                 title = item.get('title') or item.get('resourceTitle') or 'Página Web'
                 duration = item.get('duration', 0)
@@ -132,16 +133,18 @@ def process_tracking_batch(global_user_id, context_id, items):
                 if not url:
                     continue
                     
-                # Identify or create resource
-                resource, created = EducationalResource.objects.get_or_create(
+                # Identify or create/update resource
+                print(f"DEBUG WORKER: Intentando guardar URL {url} con título: {title}", flush=True)
+                resource, created = EducationalResource.objects.update_or_create(
                     url=url,
                     defaults={
                         'resource_id': hashlib.md5(url.encode()).hexdigest(),
                         'title': title,
-                        'resource_type': 'article',  # Fallback for web pages
-                        'description': 'Recurso rastreado mediante extensión de navegador.',
+                        'resource_type': item.get('activityType') or 'article',
+                        'description': item.get('contentSummary') or 'Recurso rastreado mediante extensión de navegador.',
                     }
                 )
+                print(f"DEBUG WORKER: Recurso {'CREADO' if created else 'ACTUALIZADO'}. ID: {resource.id}, Título final en DB: {resource.title}", flush=True)
                 
                 # We need a backward-compatible lti_user_id since it's a required CharField.
                 # Use the global user id as string.

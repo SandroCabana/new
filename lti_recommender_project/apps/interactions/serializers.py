@@ -40,6 +40,7 @@ class TrackedFeedbackSerializer(serializers.Serializer):
 class TrackedDataSerializer(serializers.Serializer):
     activityType = serializers.CharField(required=False, default='viewed')
     associatedURL = serializers.CharField()
+    resourceTitle = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     associatedDomains = serializers.ListField(
         child=serializers.CharField(),
         required=False, allow_empty=True, default=list

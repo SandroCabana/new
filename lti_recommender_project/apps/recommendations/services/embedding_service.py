@@ -47,23 +47,29 @@ class EmbeddingService:
             'RECOMMENDATION_CONFIG',
             {}
         ).get('EMBEDDING_DIMENSION', 768)
-        self.model = None
-        self._load_model()
+        self._model = None
+
+    @property
+    def model(self):
+        """Getter perezoso para el modelo."""
+        if self._model is None:
+            self._load_model()
+        return self._model
 
     def _load_model(self):
-        """Carga el modelo de Sentence Transformers."""
-        if self.model is not None:
+        """Carga el modelo de Sentence Transformers de forma diferida."""
+        if self._model is not None:
             return
         try:
             from sentence_transformers import SentenceTransformer
-            logger.info(f"Cargando modelo multilingual: {self.model_name}")
-            self.model = SentenceTransformer(self.model_name)
-            logger.info(f"Modelo cargado — dim: {self.embedding_dim}")
+            logger.info(f"INICIO: Cargando modelo pesado {self.model_name}...")
+            self._model = SentenceTransformer(self.model_name)
+            logger.info(f"ÉXITO: Modelo cargado — dim: {self.embedding_dim}")
         except ImportError:
             logger.error("sentence-transformers no está instalado.")
             raise
         except Exception as e:
-            logger.error(f"Error al cargar el modelo: {e}")
+            logger.error(f"Error FATAL al cargar el modelo: {e}")
             raise
 
     def generate_embedding(self, text: str) -> List[float]:

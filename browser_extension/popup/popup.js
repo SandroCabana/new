@@ -447,12 +447,17 @@ async function showPreview() {
             trackedDataList: pendingData.map(item => ({
                 activityType: item.type || 'webpage',
                 associatedURL: item.url,
+                resourceTitle: item.title || 'Página Web',
                 associatedDomains: item.domains || [],
                 associatedKeywords: item.keywords || [],
                 startTime: new Date(item.startTime).toISOString(),
                 endTime: new Date(item.endTime).toISOString(),
+                activeTime: item.activeTime || item.timeSpent,
+                duration: item.timeSpent || 0,
             }))
         };
+
+        console.log('[LTI Tracker] Preview payload:', payload);
 
         const response = await fetch(`${settings.apiUrl}/interactions/preview/`, {
             method: 'POST',
@@ -512,17 +517,21 @@ async function confirmAndSend() {
             trackedDataList: pendingData.map(item => ({
                 activityType: item.type || 'webpage',
                 associatedURL: item.url,
+                resourceTitle: item.title || 'Página Web',
                 associatedDomains: item.domains || [],
                 associatedKeywords: item.keywords || [],
                 startTime: new Date(item.startTime).toISOString(),
                 endTime: new Date(item.endTime).toISOString(),
                 activeTime: item.activeTime || item.timeSpent,
+                duration: item.timeSpent || 0,
                 scrollDepth: item.scrollDepth || 0,
                 contentSummary: item.contentSummary || '',
                 videoData: item.videoData || null,
             }))
 
         };
+
+        console.log('[LTI Tracker] Sending payload:', payload);
 
         const response = await fetch(`${settings.apiUrl}/interactions/tracked-data-batch/`, {
             method: 'POST',
