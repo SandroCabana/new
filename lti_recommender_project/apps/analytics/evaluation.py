@@ -118,9 +118,18 @@ class OfflineEvaluator:
             logger.warning("Insufficient data for evaluation (< 10 interactions)")
             return {'error': 'insufficient_data', 'count': len(interactions)}
 
-        # Temporal split
+        # Split temporal
         split_idx = int(len(interactions) * (1 - test_ratio))
+        train_set = interactions[:split_idx]
         test_set = interactions[split_idx:]
+
+        # Build train history for filtering
+        user_train = {}
+        for i in train_set:
+            uid = i['lti_user_id']
+            if uid not in user_train:
+                user_train[uid] = set()
+            user_train[uid].add(i['resource_id'])
 
         # Group test interactions by user
         user_test: Dict[str, Dict] = {}
@@ -142,13 +151,24 @@ class OfflineEvaluator:
         for user_id, data in user_test.items():
             relevant = data['relevant']
             context_id = data['context_id']
+            train_ids = user_train.get(user_id, set())
 
             if not relevant:
                 continue
 
             try:
-                recs = model.get_recommendations(user_id, context_id, limit=max_k)
-                rec_ids = [r['id'] for r in recs if 'id' in r]
+                # Disable exclude_viewed so the model can recommend the test items
+                # We request more items to compensate for the ones we'll filter out
+                recs = model.get_recommendations(user_id, context_id, limit=max_k * 5, exclude_viewed=False)
+                
+                # Exclude items the user saw during training, keep test items
+                rec_ids = []
+                for r in recs:
+                    if 'id' in r and r['id'] not in train_ids:
+                        rec_ids.append(r['id'])
+                
+                # Take only the top max_k after filtering
+                rec_ids = rec_ids[:max_k]
 
                 for k in k_values:
                     metrics[f'precision@{k}'].append(precision_at_k(rec_ids, relevant, k))

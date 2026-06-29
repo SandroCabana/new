@@ -453,6 +453,7 @@ def visual_dashboard(request):
     context = {
         'latest_results': latest_results,
         'history_json': history_json,
+        'weights': weights,
         'weights_json': json.dumps(weights),
         'youtube_count': youtube_count,
         'openalex_count': openalex_count,

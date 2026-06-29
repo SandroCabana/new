@@ -87,7 +87,7 @@
                 <div class="flex justify-between items-start">
                     <h3 class="text-sm font-medium text-gray-500">Ensemble & Hybrid</h3>
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        Hybrid Wt: 25.0%
+                        Hybrid Wt: {{ weights.hybrid|default:"25"|floatformat:1 }}%
                     </span>
                 </div>
                 <div class="mt-4">

@@ -51,7 +51,7 @@ class EnsembleRecommender:
             from lti_recommender_project.apps.recommendations.services.recommendation_engine import get_recommendation_engine
             hybrid = get_recommendation_engine()
             self.models['hybrid'] = {
-                'get_recs': lambda uid, cid, limit: hybrid.get_recommendations(uid, cid, limit, exclude_viewed=True),
+                'get_recs': lambda uid, cid, limit, exclude_viewed=True: hybrid.get_recommendations(uid, cid, limit, exclude_viewed=exclude_viewed),
                 'weight': self.weights.get('hybrid', 0.25)
             }
             logger.info("Loaded Hybrid model")
@@ -130,19 +130,20 @@ class EnsembleRecommender:
             return []
         
         if self.strategy == 'weighted_average':
-            return self._weighted_average(user_id, context_id, limit)
+            return self._weighted_average(user_id, context_id, limit, exclude_viewed)
         elif self.strategy == 'rank_fusion':
-            return self._rank_fusion(user_id, context_id, limit)
+            return self._rank_fusion(user_id, context_id, limit, exclude_viewed)
         elif self.strategy == 'voting':
-            return self._voting(user_id, context_id, limit)
+            return self._voting(user_id, context_id, limit, exclude_viewed)
         else:
-            return self._weighted_average(user_id, context_id, limit)
+            return self._weighted_average(user_id, context_id, limit, exclude_viewed)
     
     def _weighted_average(
         self,
         user_id: str,
         context_id: str,
-        limit: int
+        limit: int,
+        exclude_viewed: bool = True
     ) -> List[Dict]:
         """Combine recommendations using weighted average of scores."""
         
@@ -152,7 +153,7 @@ class EnsembleRecommender:
         for model_name, model_info in self.models.items():
             try:
                 # Get extended recommendations
-                recs = model_info['get_recs'](user_id, context_id, limit * 3)
+                recs = model_info['get_recs'](user_id, context_id, limit * 3, exclude_viewed=exclude_viewed)
                 
                 # Validation and logging
                 if recs is None:
@@ -211,6 +212,7 @@ class EnsembleRecommender:
         user_id: str,
         context_id: str,
         limit: int,
+        exclude_viewed: bool = True,
         k: int = 60
     ) -> List[Dict]:
         """
@@ -222,7 +224,7 @@ class EnsembleRecommender:
         
         for model_name, model_info in self.models.items():
             try:
-                recs = model_info['get_recs'](user_id, context_id, limit * 2)
+                recs = model_info['get_recs'](user_id, context_id, limit * 2, exclude_viewed=exclude_viewed)
                 
                 if not isinstance(recs, list):
                     logger.warning(f"RankFusion: Model {model_name} did not return a list")
@@ -267,7 +269,8 @@ class EnsembleRecommender:
         self,
         user_id: str,
         context_id: str,
-        limit: int
+        limit: int,
+        exclude_viewed: bool = True
     ) -> List[Dict]:
         """
         Majority voting - items appearing in more models rank higher.
@@ -276,7 +279,7 @@ class EnsembleRecommender:
         
         for model_name, model_info in self.models.items():
             try:
-                recs = model_info['get_recs'](user_id, context_id, limit)
+                recs = model_info['get_recs'](user_id, context_id, limit, exclude_viewed=exclude_viewed)
                 
                 if not isinstance(recs, list):
                     logger.warning(f"Voting: Model {model_name} did not return a list")
