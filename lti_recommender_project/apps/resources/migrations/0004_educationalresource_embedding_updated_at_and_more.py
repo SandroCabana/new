@@ -3,6 +3,7 @@
 from django.db import migrations, models
 import pgvector.django.indexes
 import pgvector.django.vector
+from pgvector.django import VectorExtension
 
 
 class Migration(migrations.Migration):
@@ -12,6 +13,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        VectorExtension(),
         migrations.AddField(
             model_name='educationalresource',
             name='embedding_updated_at',

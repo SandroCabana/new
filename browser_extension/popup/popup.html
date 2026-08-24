@@ -121,7 +121,7 @@
         <div class="conn-icon">⚠️</div>
         <div class="conn-info">
           <h4 id="conn-title">Desconectado</h4>
-          <p id="conn-desc">Sincroniza con Moodle para activar la extensión.</p>
+          <p id="conn-desc">Sincroniza con Moodle para activar la extensión automáticamente.</p>
         </div>
       </div>
 
@@ -132,66 +132,23 @@
           <strong id="user-name">Usuario</strong>
           <span id="user-email-display">email@ejemplo.com</span>
         </div>
-        <button id="disconnect" class="btn btn-danger btn-small">Cerrar Sesión</button>
+        <button id="disconnect" class="btn btn-danger btn-small">Desvincular</button>
       </div>
 
       <!-- Active Course Selector -->
       <div class="setting-group" id="course-selector-group">
-        <label for="context-selector">🎓 Curso Actual</label>
+        <label for="context-selector">🎓 Curso Activo</label>
         <select id="context-selector">
           <option value="">-- Selecciona un curso --</option>
         </select>
-        <div id="context-id-container" class="hidden">
-          <input type="text" id="context-id" placeholder="Contexto ID Manual" style="margin-top: 10px;">
-        </div>
       </div>
 
-      <!-- Advanced Configuration Accordion -->
-      <div class="advanced-settings">
-        <button id="toggle-advanced" class="advanced-toggle">
-          <span>⚙️ Configuración Avanzada</span>
-          <span class="arrow">▼</span>
-        </button>
-        
-        <div id="advanced-content" class="advanced-content hidden">
-          <div class="setting-group">
-            <label for="api-url">🖥️ URL del Servidor</label>
-            <input type="text" id="api-url" placeholder="http://localhost:8080">
-          </div>
-
-          <div class="manual-auth" id="auth-section">
-            <div id="login-form">
-              <p class="hint">Login Manual (Backup)</p>
-              <div class="form-group">
-                <input type="text" id="login-email" placeholder="Email / Usuario">
-              </div>
-              <div class="form-group" style="margin-top: 8px;">
-                <input type="password" id="login-password" placeholder="Contraseña">
-              </div>
-              <button id="login-btn" class="btn btn-primary btn-full" style="margin-top: 12px;">
-                🔐 Acceder
-              </button>
-              <p class="auth-toggle">¿Nuevo? <a href="#" id="show-register">Crear cuenta</a></p>
-            </div>
-
-            <!-- Register Form (hidden) -->
-            <div id="register-form" class="hidden">
-              <p class="hint">Registro Manual</p>
-              <div class="form-group"><input type="text" id="reg-username" placeholder="Usuario"></div>
-              <div class="form-group" style="margin-top: 8px;"><input type="email" id="reg-email" placeholder="Email"></div>
-              <div class="form-group" style="margin-top: 8px;"><input type="password" id="reg-password" placeholder="Contraseña"></div>
-              <button id="register-btn" class="btn btn-primary btn-full" style="margin-top: 12px;">✨ Registrar</button>
-              <p class="auth-toggle"><a href="#" id="show-login">Volver al login</a></p>
-            </div>
-          </div>
-          
-          <div id="login-error" class="error-message hidden"></div>
-          <button id="clear-local" class="btn btn-danger btn-full" style="margin-top: 20px;">🗑️ Limpiar Datos Locales</button>
-        </div>
+      <div class="setting-group" style="margin-top: 15px;">
+        <button id="save-settings" class="btn btn-success btn-full">💾 Guardar Curso Activo</button>
       </div>
 
-      <div class="setting-group" style="margin-top: 20px;">
-        <button id="save-settings" class="btn btn-success btn-full">💾 Guardar Cambios</button>
+      <div class="setting-group" style="margin-top: 10px;">
+        <button id="clear-local" class="btn btn-secondary btn-full">🗑️ Limpiar Datos Locales</button>
       </div>
     </section>
 

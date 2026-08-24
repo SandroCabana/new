@@ -65,6 +65,7 @@ services:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
       - logs_volume:/app/logs
+      - ml_models_volume:/srv/lti_recommender_project/ml/saved_models
     # Port 8000 only accessible internally via Nginx - not exposed publicly
     expose:
       - "8000"
@@ -102,6 +103,13 @@ services:
       - .:/srv/lti_recommender_project
       - keys_volume:/app/keys
       - logs_volume:/app/logs
+      - ml_models_volume:/srv/lti_recommender_project/ml/saved_models
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A lti_recommender_project.celery_app inspect ping -d celery@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     depends_on:
       db:
         condition: service_healthy
@@ -130,6 +138,13 @@ services:
       - .:/srv/lti_recommender_project
       - keys_volume:/app/keys
       - logs_volume:/app/logs
+      - ml_models_volume:/srv/lti_recommender_project/ml/saved_models
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import sys, os; sys.exit(0 if any(\"beat\" in open(f\"/proc/{p}/cmdline\").read() for p in os.listdir(\"/proc\") if p.isdigit()) else 1)'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
     depends_on:
       db:
         condition: service_healthy
@@ -159,7 +174,7 @@ services:
     depends_on:
       - web
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/nginx-health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1/nginx-health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -190,3 +205,5 @@ volumes:
     driver: local
   keys_volume:
     name: lti_recommender_project_keys_volume
+  ml_models_volume:
+    name: lti_recommender_project_ml_models_volume
