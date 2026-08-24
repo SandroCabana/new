@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,275 +11,296 @@
     <!-- Chart.js for visualizations -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body class="bg-gray-50 text-gray-800">
 
-<div class="min-h-screen p-6">
-    <div class="max-w-7xl mx-auto space-y-6">
-        
-        <!-- Header -->
-        <header class="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">ML Model Evaluation Dashboard</h1>
-                <p class="text-sm text-gray-500 mt-1">Real-time performance metrics for recommendation models (Offline Evaluation)</p>
-            </div>
-            <div class="text-sm text-gray-500">
-                Last updated: {{ latest_results.ensemble.evaluated_at|default:"N/A"|date:"Y-m-d H:i" }}
-            </div>
-        </header>
+    <div class="min-h-screen p-6">
+        <div class="max-w-7xl mx-auto space-y-6">
 
-        <!-- KPI Cards (Latest Results) -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <!-- SVD Card -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-start">
-                    <h3 class="text-sm font-medium text-gray-500">SVD (Matrix Factorization)</h3>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        Weight: {{ weights.svd|default:"0"|floatformat:1 }}%
-                    </span>
+            <!-- Header -->
+            <header class="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">ML Model Evaluation Dashboard</h1>
+                    <p class="text-sm text-gray-500 mt-1">Real-time performance metrics for recommendation models
+                        (Offline Evaluation)</p>
                 </div>
-                <div class="mt-4">
-                    <p class="text-3xl font-bold text-gray-900">{{ latest_results.svd.test_rmse|default:latest_results.svd.train_rmse|default:"—"|floatformat:4 }}</p>
-                    <p class="text-sm text-gray-500 mt-1">Test RMSE</p>
+                <div class="text-sm text-gray-500">
+                    Last updated: {{ latest_results.ensemble.evaluated_at|default:"N/A"|date:"Y-m-d H:i" }}
                 </div>
-                <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
-                    <div><span class="text-gray-500">P@5:</span> <span class="font-medium">{{ latest_results.svd.precision_at_5|default:"—"|floatformat:4 }}</span></div>
-                    <div><span class="text-gray-500">NDCG@5:</span> <span class="font-medium">{{ latest_results.svd.ndcg_at_5|default:"—"|floatformat:4 }}</span></div>
+            </header>
+
+            <!-- KPI Cards (Latest Results) -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <!-- SVD Card -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-sm font-medium text-gray-500">SVD (Matrix Factorization)</h3>
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Weight: {{ weights.svd|default:"0"|floatformat:1 }}%
+                        </span>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-3xl font-bold text-gray-900">{{
+                            latest_results.svd.test_rmse|default:latest_results.svd.train_rmse|default:"—"|floatformat:4
+                            }}</p>
+                        <p class="text-sm text-gray-500 mt-1">Test RMSE</p>
+                    </div>
+                    <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                        <div><span class="text-gray-500">P@5:</span> <span class="font-medium">{{
+                                latest_results.svd.precision_at_5|default:"—"|floatformat:4 }}</span></div>
+                        <div><span class="text-gray-500">NDCG@5:</span> <span class="font-medium">{{
+                                latest_results.svd.ndcg_at_5|default:"—"|floatformat:4 }}</span></div>
+                    </div>
+                </div>
+
+                <!-- NCF Card -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-sm font-medium text-gray-500">Neural CF (NCF)</h3>
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            Weight: {{ weights.ncf|default:"0"|floatformat:1 }}%
+                        </span>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-3xl font-bold text-gray-900">{{
+                            latest_results.ncf.test_rmse|default:"—"|floatformat:4 }}</p>
+                        <p class="text-sm text-gray-500 mt-1">Test RMSE</p>
+                    </div>
+                    <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                        <div><span class="text-gray-500">P@5:</span> <span class="font-medium">{{
+                                latest_results.ncf.precision_at_5|default:"—"|floatformat:4 }}</span></div>
+                        <div><span class="text-gray-500">NDCG@5:</span> <span class="font-medium">{{
+                                latest_results.ncf.ndcg_at_5|default:"—"|floatformat:4 }}</span></div>
+                    </div>
+                </div>
+
+                <!-- Sequential Card -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-sm font-medium text-gray-500">Sequential (GRU4Rec)</h3>
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Weight: {{ weights.sequential|default:"0"|floatformat:1 }}%
+                        </span>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-3xl font-bold text-gray-900">{{
+                            latest_results.sequential.test_hit_rate_at_10|default:0|floatformat:4 }}</p>
+                        <p class="text-sm text-gray-500 mt-1">Test Hit Rate @ 10</p>
+                    </div>
+                    <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                        <div><span class="text-gray-500">P@5:</span> <span class="font-medium">{{
+                                latest_results.sequential.precision_at_5|default:"—"|floatformat:4 }}</span></div>
+                        <div><span class="text-gray-500">NDCG@5:</span> <span class="font-medium">{{
+                                latest_results.sequential.ndcg_at_5|default:"—"|floatformat:4 }}</span></div>
+                    </div>
+                </div>
+
+                <!-- Ensemble Card -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-sm font-medium text-gray-500">Ensemble & Hybrid</h3>
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            Hybrid Wt: {{ weights.hybrid|default:"25"|floatformat:1 }}%
+                        </span>
+                    </div>
+                    <div class="mt-4">
+                        <p class="text-3xl font-bold text-gray-900">{{
+                            latest_results.ensemble.precision_at_5|default:"—"|floatformat:4 }}</p>
+                        <p class="text-sm text-gray-500 mt-1">Overall Precision @ 5</p>
+                    </div>
+                    <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                        <div><span class="text-gray-500">MAP@5:</span> <span class="font-medium">{{
+                                latest_results.ensemble.map_at_k|default:"—"|floatformat:4 }}</span></div>
+                        <div><span class="text-gray-500">NDCG@5:</span> <span class="font-medium">{{
+                                latest_results.ensemble.ndcg_at_5|default:"—"|floatformat:4 }}</span></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- NCF Card -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-start">
-                    <h3 class="text-sm font-medium text-gray-500">Neural CF (NCF)</h3>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        Weight: {{ weights.ncf|default:"0"|floatformat:1 }}%
-                    </span>
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Line Chart: RMSE Trend -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-base font-medium text-gray-900 mb-4">RMSE Trend (Collaborative Models)</h3>
+                    <div class="relative h-72">
+                        <canvas id="rmseChart"></canvas>
+                    </div>
                 </div>
-                <div class="mt-4">
-                    <p class="text-3xl font-bold text-gray-900">{{ latest_results.ncf.test_rmse|default:"—"|floatformat:4 }}</p>
-                    <p class="text-sm text-gray-500 mt-1">Test RMSE</p>
-                </div>
-                <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
-                    <div><span class="text-gray-500">P@5:</span> <span class="font-medium">{{ latest_results.ncf.precision_at_5|default:"—"|floatformat:4 }}</span></div>
-                    <div><span class="text-gray-500">NDCG@5:</span> <span class="font-medium">{{ latest_results.ncf.ndcg_at_5|default:"—"|floatformat:4 }}</span></div>
+
+                <!-- Doughnut Chart: Ensemble Weights -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-base font-medium text-gray-900 mb-4">Auto-Adjusted Ensemble Weights</h3>
+                    <div class="relative h-72 flex justify-center">
+                        <canvas id="weightsChart"></canvas>
+                    </div>
                 </div>
             </div>
 
-            <!-- Sequential Card -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-start">
-                    <h3 class="text-sm font-medium text-gray-500">Sequential (GRU4Rec)</h3>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Weight: {{ weights.sequential|default:"0"|floatformat:1 }}%
-                    </span>
+            <!-- Line Chart: Hit Rate Trend -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-base font-medium text-gray-900 mb-4">Sequential Model Performance (Hit Rate @ 10)
+                    </h3>
+                    <div class="relative h-64">
+                        <canvas id="hitRateChart"></canvas>
+                    </div>
                 </div>
-                <div class="mt-4">
-                    <p class="text-3xl font-bold text-gray-900">{{ latest_results.sequential.test_hit_rate_at_10|default:0|floatformat:4 }}</p>
-                    <p class="text-sm text-gray-500 mt-1">Test Hit Rate @ 10</p>
-                </div>
-                <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
-                    <div><span class="text-gray-500">P@5:</span> <span class="font-medium">{{ latest_results.sequential.precision_at_5|default:"—"|floatformat:4 }}</span></div>
-                    <div><span class="text-gray-500">NDCG@5:</span> <span class="font-medium">{{ latest_results.sequential.ndcg_at_5|default:"—"|floatformat:4 }}</span></div>
+
+                <!-- Bar Chart: Resource Sources -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-base font-medium text-gray-900 mb-4">Resource Distribution by Source</h3>
+                    <div class="relative h-64">
+                        <canvas id="sourcesChart"></canvas>
+                    </div>
                 </div>
             </div>
 
-            <!-- Ensemble Card -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-start">
-                    <h3 class="text-sm font-medium text-gray-500">Ensemble & Hybrid</h3>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        Hybrid Wt: {{ weights.hybrid|default:"25"|floatformat:1 }}%
-                    </span>
-                </div>
-                <div class="mt-4">
-                    <p class="text-3xl font-bold text-gray-900">{{ latest_results.ensemble.precision_at_5|default:"—"|floatformat:4 }}</p>
-                    <p class="text-sm text-gray-500 mt-1">Overall Precision @ 5</p>
-                </div>
-                <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
-                    <div><span class="text-gray-500">MAP@5:</span> <span class="font-medium">{{ latest_results.ensemble.map_at_k|default:"—"|floatformat:4 }}</span></div>
-                    <div><span class="text-gray-500">NDCG@5:</span> <span class="font-medium">{{ latest_results.ensemble.ndcg_at_5|default:"—"|floatformat:4 }}</span></div>
-                </div>
-            </div>
         </div>
-
-        <!-- Charts Row -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Line Chart: RMSE Trend -->
-            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h3 class="text-base font-medium text-gray-900 mb-4">RMSE Trend (Collaborative Models)</h3>
-                <div class="relative h-72">
-                    <canvas id="rmseChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Doughnut Chart: Ensemble Weights -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h3 class="text-base font-medium text-gray-900 mb-4">Auto-Adjusted Ensemble Weights</h3>
-                <div class="relative h-72 flex justify-center">
-                    <canvas id="weightsChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Line Chart: Hit Rate Trend -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h3 class="text-base font-medium text-gray-900 mb-4">Sequential Model Performance (Hit Rate @ 10)</h3>
-                <div class="relative h-64">
-                    <canvas id="hitRateChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Bar Chart: Resource Sources -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h3 class="text-base font-medium text-gray-900 mb-4">Resource Distribution by Source</h3>
-                <div class="relative h-64">
-                    <canvas id="sourcesChart"></canvas>
-                </div>
-            </div>
-        </div>
-
     </div>
-</div>
 
-<script>
-    // Data injected from Django view
-    const historyData = JSON.parse('{{ history_json|escapejs }}');
-    const weightsData = JSON.parse('{{ weights_json|escapejs }}');
+    <script>
+        // Data injected from Django view
+        const historyData = JSON.parse('{{ history_json|escapejs }}');
+        const weightsData = JSON.parse('{{ weights_json|escapejs }}');
 
-    // Chart.js Default styling
-    Chart.defaults.font.family = "'Inter', -apple-system, system-ui, sans-serif";
-    Chart.defaults.color = '#6b7280';
-    Chart.defaults.scale.grid.color = '#f3f4f6';
+        // Chart.js Default styling
+        Chart.defaults.font.family = "'Inter', -apple-system, system-ui, sans-serif";
+        Chart.defaults.color = '#6b7280';
+        Chart.defaults.scale.grid.color = '#f3f4f6';
 
-    // 1. RMSE Trend Chart (Line)
-    const rmseCtx = document.getElementById('rmseChart').getContext('2d');
-    new Chart(rmseCtx, {
-        type: 'line',
-        data: {
-            labels: historyData.labels,
-            datasets: [
-                {
-                    label: 'SVD RMSE',
-                    data: historyData.svd_rmse,
-                    borderColor: '#3b82f6', // blue-500
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    tension: 0.3,
-                    fill: true
+        // 1. RMSE Trend Chart (Line)
+        const rmseCtx = document.getElementById('rmseChart').getContext('2d');
+        new Chart(rmseCtx, {
+            type: 'line',
+            data: {
+                labels: historyData.labels,
+                datasets: [
+                    {
+                        label: 'SVD RMSE',
+                        data: historyData.svd_rmse,
+                        borderColor: '#3b82f6', // blue-500
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'NCF RMSE',
+                        data: historyData.ncf_rmse,
+                        borderColor: '#a855f7', // purple-500
+                        borderDash: [5, 5],
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' }
                 },
-                {
-                    label: 'NCF RMSE',
-                    data: historyData.ncf_rmse,
-                    borderColor: '#a855f7', // purple-500
-                    borderDash: [5, 5],
-                    tension: 0.3
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'top' }
-            },
-            scales: {
-                y: {
-                    beginAtZero: false,
-                    title: { display: true, text: 'Error (Lower is Better)' }
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: { display: true, text: 'Error (Lower is Better)' }
+                    }
                 }
             }
-        }
-    });
+        });
 
-    // 2. Hit Rate Trend Chart (Line)
-    const hitCtx = document.getElementById('hitRateChart').getContext('2d');
-    new Chart(hitCtx, {
-        type: 'line',
-        data: {
-            labels: historyData.labels,
-            datasets: [
-                {
-                    label: 'Sequential Hit Rate (%)',
-                    data: historyData.seq_hit,
-                    borderColor: '#22c55e', // green-500
-                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                    tension: 0.3,
-                    fill: true
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'top' }
+        // 2. Hit Rate Trend Chart (Line)
+        const hitCtx = document.getElementById('hitRateChart').getContext('2d');
+        new Chart(hitCtx, {
+            type: 'line',
+            data: {
+                labels: historyData.labels,
+                datasets: [
+                    {
+                        label: 'Sequential Hit Rate (%)',
+                        data: historyData.seq_hit,
+                        borderColor: '#22c55e', // green-500
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: { display: true, text: 'Hit Rate % (Higher is Better)' }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: 'Hit Rate % (Higher is Better)' }
+                    }
                 }
             }
-        }
-    });
+        });
 
-    // 3. Ensemble Weights Chart (Doughnut)
-    const weightsCtx = document.getElementById('weightsChart').getContext('2d');
-    new Chart(weightsCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['SVD', 'NCF', 'Sequential', 'Hybrid (Base)'],
-            datasets: [{
-                data: [
-                    weightsData.svd, 
-                    weightsData.ncf, 
-                    weightsData.sequential, 
-                    weightsData.hybrid
+        // 3. Ensemble Weights Chart (Doughnut)
+        const weightsCtx = document.getElementById('weightsChart').getContext('2d');
+        new Chart(weightsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['SVD', 'NCF', 'Sequential', 'Hybrid (Base)'],
+                datasets: [{
+                    data: [
+                        weightsData.svd,
+                        weightsData.ncf,
+                        weightsData.sequential,
+                        weightsData.hybrid
+                    ],
+                    backgroundColor: [
+                        '#3b82f6', // blue
+                        '#a855f7', // purple
+                        '#22c55e', // green
+                        '#9ca3af'  // gray
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // 4. Resource Sources Chart (Bar)
+        const sourcesCtx = document.getElementById('sourcesChart').getContext('2d');
+        new Chart(sourcesCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Kaggle (Cursos)', 'arXiv (Papers EN)', 'OpenAlex (Papers ES)', 'YouTube (Videos ES)'],
+                datasets: [{
+                    label: 'Número de Recursos',
+                    data: [
+                        {{ kaggle_count|default: "0"
+                }},
+                    {{ arxiv_count|default: "0" }},
+            {{ openalex_count|default: "0" }},
+            {{ youtube_count|default: "0" }}
                 ],
-                backgroundColor: [
-                    '#3b82f6', // blue
-                    '#a855f7', // purple
-                    '#22c55e', // green
-                    '#9ca3af'  // gray
-                ],
-                borderWidth: 0
+            backgroundColor: [
+            'rgba(59, 130, 246, 0.7)', // blue (Kaggle)
+            'rgba(168, 85, 247, 0.7)', // purple (arXiv)
+            'rgba(234, 179, 8, 0.7)',  // yellow (OpenAlex)
+            'rgba(239, 68, 68, 0.7)'   // red (YouTube)
+        ],
+            borderRadius: 4
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '70%',
-            plugins: {
-                legend: { position: 'bottom' }
-            }
-        }
-    });
-
-    // 4. Resource Sources Chart (Bar)
-    const sourcesCtx = document.getElementById('sourcesChart').getContext('2d');
-    new Chart(sourcesCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Kaggle (Cursos)', 'arXiv (Papers EN)', 'OpenAlex (Papers ES)', 'YouTube (Videos ES)'],
-            datasets: [{
-                label: 'Número de Recursos',
-                data: [
-                    {{ kaggle_count|default:"0" }},
-                    {{ arxiv_count|default:"0" }},
-                    {{ openalex_count|default:"0" }},
-                    {{ youtube_count|default:"0" }}
-                ],
-                backgroundColor: [
-                    'rgba(59, 130, 246, 0.7)', // blue (Kaggle)
-                    'rgba(168, 85, 247, 0.7)', // purple (arXiv)
-                    'rgba(234, 179, 8, 0.7)',  // yellow (OpenAlex)
-                    'rgba(239, 68, 68, 0.7)'   // red (YouTube)
-                ],
-                borderRadius: 4
-            }]
-        },
-        options: {
+            options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
@@ -292,6 +314,7 @@
             }
         }
     });
-</script>
+    </script>
 </body>
+
 </html>
