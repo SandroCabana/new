@@ -178,11 +178,11 @@ USE_TZ = True
 # ==============================================================================
 
 STATIC_URL = env('STATIC_URL', default='/static/')
-STATIC_ROOT = env('STATIC_ROOT', default=str(BASE_DIR / 'staticfiles'))
+STATIC_ROOT = env('STATIC_ROOT', default='/app/staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = env('MEDIA_URL', default='/media/')
-MEDIA_ROOT = env('MEDIA_ROOT', default=str(BASE_DIR / 'media'))
+MEDIA_ROOT = env('MEDIA_ROOT', default='/app/media')
 
 # ==============================================================================
 # SECURITY SETTINGS
