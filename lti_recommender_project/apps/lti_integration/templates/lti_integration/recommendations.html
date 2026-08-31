@@ -89,51 +89,6 @@
             /* Gris más oscuro para los valores */
         }
 
-        pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            max-height: 300px;
-            /* Limita la altura del JSON para que no ocupe toda la pantalla */
-            overflow-y: auto;
-            /* Agrega scroll si el contenido es muy largo */
-        }
-
-        /* Estilos para el botón de colapsar/expandir */
-        .collapsible-header {
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #E2E8F0;
-            margin-bottom: 1rem;
-        }
-
-        .collapsible-header:hover {
-            color: #4F46E5;
-        }
-
-        .collapsible-content {
-            display: none;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
-
-        .collapsible-content.expanded {
-            display: block;
-            max-height: 500px;
-            /* Altura máxima cuando expandido, ajusta según necesidad */
-        }
-
-        .arrow-icon {
-            transition: transform 0.3s ease-out;
-        }
-
-        .arrow-icon.rotated {
-            transform: rotate(90deg);
-        }
-
         .confidence-badge {
             font-size: 0.75rem;
             font-weight: 600;
@@ -157,14 +112,12 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <!-- Tarjeta de Información del Usuario -->
                 <div class="bg-blue-50 p-6 rounded-lg shadow-sm border border-blue-200">
-                    <h2 class="text-xl font-semibold text-blue-800 mb-3">Tu Perfil LTI</h2>
+                    <h2 class="text-xl font-semibold text-blue-800 mb-3">Tu Perfil</h2>
                     <p class="text-gray-700 mb-1"><span class="info-label">Nombre:</span> <span class="info-value">
                             {{ user_name }}</span></p>
                     <p class="text-gray-700 mb-1"><span class="info-label">Email:</span> <span class="info-value">
                             {{ user_email }}</span></p>
-                    <p class="text-gray-700 mb-1"><span class="info-label">ID de Usuario:</span> <span
-                            class="info-value">{{ user_id }}</span></p>
-                    <p class="text-gray-700"><span class="info-label">Roles:</span>
+                    <p class="text-gray-700"><span class="info-label">Rol:</span>
                         <span class="info-value flex flex-wrap gap-1">
                             {% for role in roles %}
                             <span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-sm mr-1 mb-1">
@@ -176,13 +129,13 @@
 
                 <!-- Tarjeta de Información del Contexto (Curso/Plataforma) -->
                 <div class="bg-green-50 p-6 rounded-lg shadow-sm border border-green-200">
-                    <h2 class="text-xl font-semibold text-green-800 mb-3">Contexto del Lanzamiento</h2>
+                    <h2 class="text-xl font-semibold text-green-800 mb-3">Contexto del Curso</h2>
                     <p class="text-gray-700 mb-1"><span class="info-label">Curso:</span> <span class="info-value">
-                            {{ course_title }}</span> (ID: <span class="info-value">{{ context_id }}</span>)</p>
+                            {{ course_title }}</span></p>
                     <p class="text-gray-700 mb-1"><span class="info-label">Actividad:</span> <span class="info-value">
                             {{ activity_title }}</span></p>
                     <p class="text-gray-700"><span class="info-label">Plataforma:</span> <span class="info-value">
-                            {{platform_name }}</span></p>
+                            {{ platform_name }}</span></p>
                 </div>
             </div>
 
@@ -191,91 +144,101 @@
             {% if recommendations %}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {% for rec in recommendations %}
-                <div class="recommendation-card">
-                    <!-- Confidence Badge -->
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-lg font-semibold text-primary-dark flex-1 mr-2">{{ rec.title }}</h3>
-                        {% with perc=rec.score|percentage %}
-                        {% if perc >= 70 %}
-                        <span class="confidence-badge bg-green-100 text-green-800 border-green-300">
-                            🟢 Alta
-                        </span>
-                        {% elif perc >= 40 %}
-                        <span class="confidence-badge bg-yellow-100 text-yellow-800 border-yellow-300">
-                            🟡 Media
-                        </span>
-                        {% else %}
-                        <span class="confidence-badge bg-orange-100 text-orange-800 border-orange-300">
-                            🔴 Baja
-                        </span>
-                        {% endif %}
-                    </div>
-
-                    <!-- Confidence Score Bar -->
-                    <div class="mb-3">
-                        <div class="flex items-center justify-between text-xs text-gray-600 mb-1">
-                            <span class="font-medium">Confianza</span>
-                            <span class="font-semibold">{{ perc }}%</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div class="recommendation-card flex flex-col justify-between">
+                    <div>
+                        <!-- Confidence Badge -->
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-primary-dark flex-1 mr-2">{{ rec.title }}</h3>
+                            {% with perc=rec.score|percentage %}
                             {% if perc >= 70 %}
-                            <div class="bg-green-500 h-2 rounded-full transition-all duration-500"
-                                style="width: {{ perc }}%"></div>
+                            <span class="confidence-badge bg-green-100 text-green-800 border-green-300">
+                                🟢 Alta
+                            </span>
                             {% elif perc >= 40 %}
-                            <div class="bg-yellow-500 h-2 rounded-full transition-all duration-500"
-                                style="width: {{ perc }}%"></div>
+                            <span class="confidence-badge bg-yellow-100 text-yellow-800 border-yellow-300">
+                                🟡 Media
+                            </span>
                             {% else %}
-                            <div class="bg-orange-500 h-2 rounded-full transition-all duration-500"
-                                style="width: {{ perc }}%"></div>
+                            <span class="confidence-badge bg-orange-100 text-orange-800 border-orange-300">
+                                🔴 Baja
+                            </span>
                             {% endif %}
                         </div>
+
+                        <!-- Confidence Score Bar -->
+                        <div class="mb-3">
+                            <div class="flex items-center justify-between text-xs text-gray-600 mb-1">
+                                <span class="font-medium">Confianza</span>
+                                <span class="font-semibold">{{ perc }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                {% if perc >= 70 %}
+                                <div class="bg-green-500 h-2 rounded-full transition-all duration-500"
+                                    style="width: {{ perc }}%"></div>
+                                {% elif perc >= 40 %}
+                                <div class="bg-yellow-500 h-2 rounded-full transition-all duration-500"
+                                    style="width: {{ perc }}%"></div>
+                                {% else %}
+                                <div class="bg-orange-500 h-2 rounded-full transition-all duration-500"
+                                    style="width: {{ perc }}%"></div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endwith %}
+
+                        <!-- Resource Metadata -->
+                        <div class="flex items-center gap-2 mb-3 flex-wrap">
+                            {% if rec.type %}
+                            <span class="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-200">
+                                📚 {{ rec.type|capfirst }}
+                            </span>
+                            {% endif %}
+                            {% if rec.difficulty %}
+                            <span
+                                class="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded-full border border-purple-200">
+                                🎯 {{ rec.difficulty|capfirst }}
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        {% if rec.explanation_text %}
+                        <p class="text-xs text-indigo-700 bg-indigo-50 p-2 rounded-md mb-3 border border-indigo-100">
+                            {{ rec.explanation_text }}
+                        </p>
+                        {% endif %}
+
+                        <p class="text-gray-600 text-sm mb-4">
+                            {% if rec.description %}
+                            {{ rec.description|truncatewords:15 }}
+                            {% else %}
+                            Explora este recurso para aprender más.
+                            {% endif %}
+                        </p>
                     </div>
-                    {% endwith %}
 
-                    <!-- Resource Metadata -->
-                    <div class="flex items-center gap-2 mb-3 flex-wrap">
-                        {% if rec.type %}
-                        <span class="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-200">
-                            📚 {{ rec.type|capfirst }}
-                        </span>
-                        {% endif %}
-                        {% if rec.difficulty %}
-                        <span
-                            class="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded-full border border-purple-200">
-                            🎯 {{ rec.difficulty|capfirst }}
-                        </span>
-                        {% endif %}
-                    </div>
+                    <div>
+                        <a href="{{ rec.url }}" target="_blank"
+                            onclick="recordInteraction('{{ rec.id }}', 'viewed', null, null)"
+                            class="list-item-link inline-flex items-center mb-2">
+                            Ir al Recurso
+                            <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                        </a>
 
-                    <p class="text-gray-600 text-sm mb-3">
-                        {% if rec.description %}
-                        {{ rec.description|truncatewords:15 }}
-                        {% else %}
-                        Explora este recurso para aprender más.
-                        {% endif %}
-                    </p>
-
-                    <a href="{{ rec.url }}" target="_blank"
-                        onclick="recordInteraction('{{ rec.id }}', 'viewed', null, null)"
-                        class="list-item-link inline-flex items-center">
-                        Ir al Recurso
-                        <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                        </svg>
-                    </a>
-
-                    <!-- Feedback Buttons -->
-                    <div class="flex items-center gap-2 mt-4 pt-3 border-t border-gray-100">
-                        <button onclick="recordInteraction('{{ rec.id }}', 'rated', 5, this)"
-                            class="flex-1 flex items-center justify-center gap-1 py-1.5 px-3 rounded-md text-sm font-medium text-gray-600 bg-gray-50 hover:bg-green-50 hover:text-green-700 transition-colors border border-gray-200 hover:border-green-200">
-                            👍 Me gusta
-                        </button>
-                        <button onclick="recordInteraction('{{ rec.id }}', 'rated', 1, this)"
-                            class="flex-1 flex items-center justify-center gap-1 py-1.5 px-3 rounded-md text-sm font-medium text-gray-600 bg-gray-50 hover:bg-red-50 hover:text-red-700 transition-colors border border-gray-200 hover:border-red-200">
-                            👎 No me gusta
-                        </button>
+                        <!-- Feedback Buttons -->
+                        <div class="flex items-center gap-2 mt-2 pt-3 border-t border-gray-100">
+                            <button onclick="recordInteraction('{{ rec.id }}', 'rated', 5, this)"
+                                class="flex-1 flex items-center justify-center gap-1 py-1.5 px-3 rounded-md text-sm font-medium text-gray-600 bg-gray-50 hover:bg-green-50 hover:text-green-700 transition-colors border border-gray-200 hover:border-green-200">
+                                👍 Me gusta
+                            </button>
+                            <button onclick="recordInteraction('{{ rec.id }}', 'rated', 1, this)"
+                                class="flex-1 flex items-center justify-center gap-1 py-1.5 px-3 rounded-md text-sm font-medium text-gray-600 bg-gray-50 hover:bg-red-50 hover:text-red-700 transition-colors border border-gray-200 hover:border-red-200">
+                                👎 No me gusta
+                            </button>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
@@ -285,41 +248,16 @@
                 No hay recomendaciones disponibles en este momento. ¡Explora más para que podamos aprender de ti!
             </p>
             {% endif %}
-
-            <!-- Sección de Datos LTI Brutos (Colapsable) -->
-            <div class="mt-10 pt-6 border-t border-gray-200">
-                <div class="collapsible-header" onclick="toggleRawData()">
-                    <h3 class="text-xl font-semibold text-primary-dark">Datos LTI Brutos (para depuración)</h3>
-                    <svg class="arrow-icon w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </div>
-                <div id="rawDataContent" class="collapsible-content">
-                    <pre
-                        class="bg-gray-50 p-4 rounded-md text-sm text-gray-700 border border-gray-200">{{ raw_lti_data }}</pre>
-                    <p class="text-sm text-gray-500 mt-2">Esta información es enviada por Moodle y procesada por tu
-                        sistema.</p>
-                </div>
-            </div>
         </div>
     </div>
 
     <script>
-        function toggleRawData() {
-            const content = document.getElementById('rawDataContent');
-            const icon = document.querySelector('.collapsible-header .arrow-icon');
-            content.classList.toggle('expanded');
-            icon.classList.toggle('rotated');
-        }
-
         // Script de seguimiento de interacciones
         async function recordInteraction(resourceId, interactionType, value, btnElement) {
-            // Datos del contexto LTI (inyectados por Django)
             const payload = {
                 lti_user_id: "{{ user_id }}",
                 lti_context_id: "{{ context_id }}",
-                resource: resourceId, // Ahora enviamos el ID correcto
+                resource: resourceId,
                 interaction_type: interactionType,
                 value: value
             };
@@ -334,8 +272,6 @@
                 });
 
                 if (response.ok) {
-                    console.log(`Interacción '${interactionType}' registrada correctamente.`);
-                    // Feedback visual si es un botón
                     if (btnElement) {
                         const originalContent = btnElement.innerHTML;
                         btnElement.innerHTML = '✓ Guardado';
@@ -345,18 +281,15 @@
                             btnElement.classList.remove('bg-blue-100', 'text-blue-800', 'border-blue-300');
                         }, 2000);
                     }
-                } else {
-                    console.error('Error al registrar interacción:', await response.text());
                 }
             } catch (error) {
-                console.error('Error de red al registrar interacción:', error);
+                // Silently handle network interaction error in UI
             }
         }
 
         // Auto-pairing con la extensión de navegador
         {% if extension_tokens %}
         window.addEventListener('load', function() {
-            // El Content Script de la extensión escuchará este mensaje
             window.postMessage({
                 type: 'LTI_RECOMMENDER_PAIRING',
                 payload: {
@@ -372,7 +305,6 @@
                     context_id: '{{ context_id }}'
                 }
             }, '*');
-            console.log("Mensaje de emparejamiento enviado a la extensión.");
         });
         {% endif %}
     </script>

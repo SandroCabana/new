@@ -50,7 +50,7 @@ def lti_login(request):
         # Captura cualquier excepción durante el inicio de sesión OIDC y registra el error.
         logger.exception("Error during LTI login initiation:")
         # Renderiza una página de error amigable para el usuario.
-        return render(request, 'recommender_app/error.html', {'message': f'Error en el inicio de sesión LTI: {e}'})
+        return render(request, 'recommender_app/error.html', {'message': 'No se pudo iniciar la sesión LTI. Por favor, intenta acceder nuevamente desde el curso.'})
 
 
 
@@ -116,7 +116,6 @@ def lti_launch(request):
             'activity_title': activity_title,
             'platform_name': platform_name,
             'recommendations': recommendations,
-            'raw_lti_data': json.dumps(launch_data, indent=2, ensure_ascii=False), # Datos brutos para depuración
         }
 
         # Renderiza la plantilla con las recomendaciones obtenidas.
@@ -125,11 +124,11 @@ def lti_launch(request):
     except LtiException as e:
         # Captura errores específicos de validación LTI (ej. "State not found", firma inválida).
         logger.exception("LTI launch error (LtiException):")
-        return render(request, 'recommender_app/error.html', {'message': f'Error en el lanzamiento LTI: {e}'})
+        return render(request, 'recommender_app/error.html', {'message': 'Ocurrió un error al validar el lanzamiento LTI. Por favor, intenta acceder nuevamente desde el curso.'})
     except Exception as e:
         # Captura cualquier otro error inesperado.
         logger.exception("Unexpected error during LTI launch:")
-        return render(request, 'recommender_app/error.html', {'message': f'Error inesperado durante el lanzamiento LTI: {e}'})
+        return render(request, 'recommender_app/error.html', {'message': 'Ocurrió un error inesperado durante el lanzamiento LTI. Por favor, intenta más tarde.'})
 
 def get_recommendations_from_api(user_id, context_id):
     """

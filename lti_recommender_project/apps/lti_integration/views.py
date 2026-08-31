@@ -55,7 +55,7 @@ def lti_login(request):
         return render(
             request,
             'lti_integration/error.html',
-            {'message': f'Error en el inicio de sesión LTI: {e}'}
+            {'message': 'No se pudo iniciar la sesión LTI. Por favor, intenta acceder nuevamente desde el curso.'}
         )
 
 
@@ -161,8 +161,6 @@ def lti_launch(request):
             'extension_tokens': jwt_tokens,
             # A/B test variant
             'ab_variant': _get_ab_variant(str(global_user.id)),
-            # Debug (solo en DEBUG=True)
-            'raw_lti_data': json.dumps(launch_data, indent=2, ensure_ascii=False) if settings.DEBUG else None,
         }
 
         return render(request, 'lti_integration/recommendations.html', context)
@@ -172,14 +170,14 @@ def lti_launch(request):
         return render(
             request,
             'lti_integration/error.html',
-            {'message': f'Error en el lanzamiento LTI: {e}'}
+            {'message': 'Ocurrió un error al validar el lanzamiento LTI. Por favor, intenta acceder nuevamente desde el curso.'}
         )
     except Exception as e:
         logger.exception("Unexpected error during LTI launch:")
         return render(
             request,
             'lti_integration/error.html',
-            {'message': f'Error inesperado: {e}'}
+            {'message': 'Ocurrió un error inesperado al procesar tus recomendaciones. Por favor, intenta más tarde.'}
         )
 
 
